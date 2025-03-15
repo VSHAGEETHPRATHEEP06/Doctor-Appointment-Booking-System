@@ -3,6 +3,7 @@ const {
   getAllUsersController,
   getAllDoctorsController,
   changeAccountStatusController,
+  deleteDoctorController,
 } = require("../controllers/adminCtrl");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -19,6 +20,12 @@ router.post(
   "/changeAccountStatus",
   authMiddleware,
   changeAccountStatusController
+);
+
+router.delete(
+  "/deleteDoctor/:doctorId",
+  authMiddleware,
+  deleteDoctorController
 );
 
 module.exports = router;

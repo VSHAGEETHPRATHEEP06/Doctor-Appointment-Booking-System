@@ -12,6 +12,8 @@ const router = express.Router();
 //POST SINGLE DOC INFO
 router.post("/getDoctorInfo", authMiddleware, getDoctorInfoController);
 
+router.get("/getDoctorInfo", authMiddleware, getDoctorInfoController);
+
 //POST UPDATE PROFILE
 router.post("/updateProfile", authMiddleware, updateProfileController);
 
@@ -27,5 +29,28 @@ router.get(
 
 //POST Update Status
 router.post("/update-status", authMiddleware, updateStatusController);
+
+exports.getDoctorInfoController = async (req, res) => {
+  try {
+    const doctor = await doctorModel.findOne({ userId: req.userId });
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor information not found",
+      });
+    }
+    res.status(200).send({
+      success: true,
+      data: doctor,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      success: false,
+      message: "Error fetching doctor information",
+      error,
+    });
+  }
+};
 
 module.exports = router;

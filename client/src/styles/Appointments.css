@@ -1,0 +1,106 @@
+.appointments-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .appointments-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  
+  .page-title {
+    color: #2c3e50;
+    font-size: 2.4rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  
+  .page-subtitle {
+    color: #7f8c8d;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .appointments-table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+  
+  .column-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+  }
+  
+  .doctor-info {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .doctor-name {
+    font-weight: 500;
+    color: #2c3e50;
+  }
+  
+  .doctor-specialization {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+  }
+  
+  .contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .datetime-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  .date-box, .time-box {
+    background: #f8f9fa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+  
+  .time-box {
+    background: #e9ecef;
+  }
+  
+  .status-tag {
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-weight: 500;
+    border: none;
+  }
+  
+  .ant-table-thead > tr > th {
+    background: #f8f9fa !important;
+  }
+  
+  .ant-table-row:hover {
+    background: #f8f9fa !important;
+  }
+  
+  @media (max-width: 768px) {
+    .appointments-container {
+      padding: 1rem;
+    }
+    
+    .page-title {
+      font-size: 1.8rem;
+    }
+    
+    .datetime-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  }

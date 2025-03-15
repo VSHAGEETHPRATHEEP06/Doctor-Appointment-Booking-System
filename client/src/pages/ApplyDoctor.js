@@ -6,6 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { showLoading, hideLoading } from "../redux/features/alertSlice";
 import axios from "axios";
 import moment from "moment";
+import { UserOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, MedicineBoxOutlined, ScheduleOutlined, WalletOutlined } from '@ant-design/icons';
+import "../styles/ApplyDoctor.css"
+
 const ApplyDoctor = () => {
   const { user } = useSelector((state) => state.user);
 
@@ -41,116 +44,165 @@ const ApplyDoctor = () => {
     } catch (error) {
       dispatch(hideLoading());
       console.log(error);
-      message.error("Somthing Went Wrrong ");
+      message.error("Something Went Wrong ");
     }
   };
   return (
     <Layout>
-      <h1 className="text-center">Apply Doctor</h1>
-      <Form layout="vertical" onFinish={handleFinish} className="m-3">
-        <h4 className="">Personal Details : </h4>
-        <Row gutter={20}>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="First Name"
-              name="firstName"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your first name" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Last Name"
-              name="lastName"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your last name" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Phone No"
-              name="phone"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your contact no" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Email"
-              name="email"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="email" placeholder="your email address" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item label="Website" name="website">
-              <Input type="text" placeholder="your website" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Address"
-              name="address"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your clinic address" />
-            </Form.Item>
-          </Col>
-        </Row>
-        <h4>Professional Details :</h4>
-        <Row gutter={20}>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Specialization"
-              name="specialization"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your specialization" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Experience"
-              name="experience"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your experience" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item
-              label="Fees Per Cunsaltation"
-              name="feesPerCunsaltation"
-              required
-              rules={[{ required: true }]}
-            >
-              <Input type="text" placeholder="your contact no" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}>
-            <Form.Item label="Timings" name="timings" required>
-              <TimePicker.RangePicker format="HH:mm" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={24} lg={8}></Col>
-          <Col xs={24} md={24} lg={8}>
-            <button className="btn btn-primary form-btn" type="submit">
-              Submit
-            </button>
-          </Col>
-        </Row>
-      </Form>
+      <div className="apply-doctor-container">
+        <div className="form-header">
+        <h1 className="form-main-title">DOC APP - Doctor Registration</h1>
+        <p className="form-subtitle">Join Our Medical Network</p>
+      </div>
+        <Form layout="vertical" onFinish={handleFinish} className="doctor-form">
+          <div className="form-section">
+            <h3 className="section-title"><UserOutlined /> Personal Information</h3>
+            <Row gutter={[24, 16]}>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="First Name"
+                  name="firstName"
+                  rules={[{ required: true, message: 'Please enter your first name' }]}
+                >
+                  <Input 
+                    prefix={<UserOutlined className="form-input-icon" />}
+                    placeholder="John"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Last Name"
+                  name="lastName"
+                  rules={[{ required: true, message: 'Please enter your last name' }]}
+                >
+                  <Input 
+                    prefix={<UserOutlined className="form-input-icon" />}
+                    placeholder="Doe"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Phone Number"
+                  name="phone"
+                  rules={[{ required: true, message: 'Please enter your phone number' }]}
+                >
+                  <Input 
+                    prefix={<PhoneOutlined className="form-input-icon" />}
+                    placeholder="+1 234 567 890"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Email"
+                  name="email"
+                  rules={[{ 
+                    required: true, 
+                    type: 'email',
+                    message: 'Please enter a valid email address' 
+                  }]}
+                >
+                  <Input 
+                    prefix={<MailOutlined className="form-input-icon" />}
+                    placeholder="john.doe@example.com"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item label="Website" name="website">
+                  <Input 
+                    prefix={<GlobalOutlined className="form-input-icon" />}
+                    placeholder="www.example.com"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Clinic Address"
+                  name="address"
+                  rules={[{ required: true, message: 'Please enter your clinic address' }]}
+                >
+                  <Input 
+                    placeholder="123 Medical Street, Health City"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="form-section">
+            <h3 className="section-title"><MedicineBoxOutlined /> Professional Details</h3>
+            <Row gutter={[24, 16]}>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Specialization"
+                  name="specialization"
+                  rules={[{ required: true, message: 'Please enter your specialization' }]}
+                >
+                  <Input 
+                    prefix={<MedicineBoxOutlined className="form-input-icon" />}
+                    placeholder="Cardiology"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Experience"
+                  name="experience"
+                  rules={[{ required: true, message: 'Please enter your experience' }]}
+                >
+                  <Input 
+                    placeholder="5 years"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Consultation Fee"
+                  name="feesPerConsultation"
+                  rules={[{ required: true, message: 'Please enter consultation fee' }]}
+                >
+                  <Input 
+                    prefix={<WalletOutlined className="form-input-icon" />}
+                    placeholder="$100"
+                    className="form-input"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12} lg={8}>
+                <Form.Item
+                  label="Availability"
+                  name="timings"
+                  rules={[{ required: true, message: 'Please select availability timings' }]}
+                >
+                  <TimePicker.RangePicker 
+                    format="HH:mm"
+                    className="time-picker"
+                    suffixIcon={<ScheduleOutlined />}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={24} lg={24}>
+                <div className="form-submit">
+                  <button className="submit-button" type="submit">
+                    Submit Application
+                  </button>
+                </div>
+              </Col>
+            </Row>
+          </div>
+        </Form>
+      </div>
     </Layout>
   );
 };

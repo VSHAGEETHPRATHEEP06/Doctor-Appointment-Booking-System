@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from "react";
 import Layout from "./../../components/Layout";
-
 import axios from "axios";
-
 import moment from "moment";
-import { message, Table } from "antd";
+import "../../styles/DoctorAppointment.css"
+import { message, Table, Tag, Button } from "antd";
+import { 
+  CalendarOutlined, 
+  UserOutlined, 
+  PhoneOutlined, 
+  CheckCircleOutlined,
+  CheckOutlined,
+  CloseOutlined 
+} from "@ant-design/icons";
+import "../../styles/Appointments.css";
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
 
   const getAppointments = async () => {
     try {
-      const res = await axios.get("/api/v1/doctor//doctor-appointments", {
+      const res = await axios.get("/api/v1/doctor/doctor-appointments", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -49,54 +57,110 @@ const DoctorAppointments = () => {
     }
   };
 
+  const statusColors = {
+    pending: "gold",
+    approved: "green",
+    reject: "red",
+    completed: "blue",
+  };
+
   const columns = [
     {
-      title: "ID",
-      dataIndex: "_id",
-    },
-    {
-      title: "Date & Time",
-      dataIndex: "date",
+      title: <div className="column-header"><UserOutlined /> Patient</div>,
+      dataIndex: "userInfo",
       render: (text, record) => (
-        <span>
-          {moment(record.date).format("DD-MM-YYYY")} &nbsp;
-          {moment(record.time).format("HH:mm")}
-        </span>
+        <div className="patient-info">
+          <span className="patient-name">
+            {record.userInfo?.name}
+          </span>
+          <span className="patient-id">
+            ID: {record.userInfo?._id}
+          </span>
+        </div>
       ),
     },
     {
-      title: "Status",
+      title: <div className="column-header"><PhoneOutlined /> Contact</div>,
+      dataIndex: "phone",
+      render: (text, record) => (
+        <div className="contact-info">
+          <span>{record.userInfo?.phone || 'N/A'}</span>
+          <span>{record.userInfo?.email}</span>
+        </div>
+      ),
+    },
+    {
+      title: <div className="column-header"><CalendarOutlined /> Date & Time</div>,
+      dataIndex: "date",
+      render: (text, record) => (
+        <div className="datetime-info">
+          <div className="date-box">
+            {moment(record.date).format("DD MMM YYYY")}
+          </div>
+          <div className="time-box">
+            {moment(record.time).format("hh:mm A")}
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: <div className="column-header"><CheckCircleOutlined /> Status</div>,
       dataIndex: "status",
+      render: (status) => (
+        <Tag color={statusColors[status.toLowerCase()]} className="status-tag">
+          {status.toUpperCase()}
+        </Tag>
+      ),
     },
     {
       title: "Actions",
       dataIndex: "actions",
       render: (text, record) => (
-        <div className="d-flex">
+        <div className="actions-container">
           {record.status === "pending" && (
-            <div className="d-flex">
-              <button
-                className="btn btn-success"
+            <>
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={() => handleStatus(record, "approved")}
+                className="approve-btn"
               >
-                Approved
-              </button>
-              <button
-                className="btn btn-danger ms-2"
+                Approve
+              </Button>
+              <Button
+                danger
+                icon={<CloseOutlined />}
                 onClick={() => handleStatus(record, "reject")}
+                className="reject-btn"
               >
                 Reject
-              </button>
-            </div>
+              </Button>
+            </>
           )}
         </div>
       ),
     },
   ];
+
   return (
     <Layout>
-      <h1>Appoinmtnets Lists</h1>
-      <Table columns={columns} dataSource={appointments} />
+      <div className="appointments-container">
+        <div className="appointments-header">
+          <h1 className="page-title">Appointment Requests</h1>
+          <p className="page-subtitle">Manage your upcoming medical appointments</p>
+        </div>
+        
+        <Table 
+          columns={columns} 
+          dataSource={appointments} 
+          rowKey="_id"
+          className="appointments-table"
+          pagination={{
+            pageSize: 5,
+            showSizeChanger: false,
+          }}
+        />
+      </div>
     </Layout>
   );
 };

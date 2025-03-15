@@ -3,8 +3,10 @@ const mongoose = require("mongoose");
 const doctorSchema = new mongoose.Schema(
   {
     userId: {
-      type: String,
-    },
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
     firstName: {
       type: String,
       required: [true, "first name is required"],
@@ -36,7 +38,7 @@ const doctorSchema = new mongoose.Schema(
       type: String,
       required: [true, "experience is required"],
     },
-    feesPerCunsaltation: {
+    feesPerConsultation: {
       type: Number,
       required: [true, "fee is required"],
     },
@@ -46,7 +48,7 @@ const doctorSchema = new mongoose.Schema(
     },
     timings: {
       type: Object,
-      required: [true, "wrok timing is required"],
+      required: [true, "work timing is required"],
     },
   },
   { timestamps: true }

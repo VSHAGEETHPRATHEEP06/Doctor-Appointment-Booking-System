@@ -41,13 +41,13 @@ const updateProfileController = async (req, res) => {
   }
 };
 
-//get single docotor
+//get single doctor
 const getDoctorByIdController = async (req, res) => {
   try {
     const doctor = await doctorModel.findOne({ _id: req.body.doctorId });
     res.status(200).send({
       success: true,
-      message: "Sigle Doc Info Fetched",
+      message: "Single Doc Info Fetched",
       data: doctor,
     });
   } catch (error) {
@@ -55,7 +55,7 @@ const getDoctorByIdController = async (req, res) => {
     res.status(500).send({
       success: false,
       error,
-      message: "Erro in Single docot info",
+      message: "Error in Single doctor info",
     });
   }
 };
@@ -89,8 +89,8 @@ const updateStatusController = async (req, res) => {
       { status }
     );
     const user = await userModel.findOne({ _id: appointments.userId });
-    const notifcation = user.notifcation;
-    notifcation.push({
+    const notification = user.notification;
+    notification.push({
       type: "status-updated",
       message: `your appointment has been updated ${status}`,
       onCLickPath: "/doctor-appointments",

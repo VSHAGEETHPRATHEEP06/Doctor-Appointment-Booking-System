@@ -1,0 +1,53 @@
+/* Doctor Appointments Specific Styles */
+.patient-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.patient-id {
+    color: #7f8c8d;
+    font-size: 0.85rem;
+}
+
+.actions-container {
+    display: flex;
+    gap: 8px;
+}
+
+.approve-btn {
+    background-color: #52c41a;
+    border-color: #52c41a;
+}
+
+.approve-btn:hover {
+    background-color: #73d13d;
+    border-color: #73d13d;
+}
+
+.reject-btn {
+    background-color: #ff4d4f;
+    border-color: #ff4d4f;
+}
+
+.ant-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .actions-container {
+        flex-direction: column;
+    }
+    
+    .ant-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

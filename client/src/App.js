@@ -103,6 +103,16 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path= "/doctor/profile"
+              element= {
+                <ProtectedRoute allowedRoles={['doctor']}>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />  
+            
             <Route
               path="/"
               element={
