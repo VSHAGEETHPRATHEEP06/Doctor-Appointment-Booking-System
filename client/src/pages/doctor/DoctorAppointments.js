@@ -128,7 +128,7 @@ const DoctorAppointments = () => {
                 Approve
               </Button>
               <Button
-                danger
+                // danger
                 icon={<CloseOutlined />}
                 onClick={() => handleStatus(record, "reject")}
                 className="reject-btn"

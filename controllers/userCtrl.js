@@ -113,7 +113,7 @@ const applyDoctorController = async (req, res) => {
 // Fixed getAllNotificationController
 const getAllNotificationController = async (req, res) => {
   try {
-    const user = await userModel.findById(req.user.userId); // Use authenticated user ID
+    const user = await userModel.findById(req.body.userId); // Use authenticated user ID
     if (!user) {
       return res.status(404).send({
         success: false,
@@ -148,7 +148,7 @@ const getAllNotificationController = async (req, res) => {
 // Fixed deleteAllNotificationController
 const deleteAllNotificationController = async (req, res) => {
   try {
-    const user = await userModel.findById(req.user.userId);
+    const user = await userModel.findById(req.body.userId);
     if (!user) {
       return res.status(404).send({
         success: false,
@@ -281,6 +281,8 @@ const userAppointmentsController = async (req, res) => {
     });
   }
 };
+
+
 
 module.exports = {
   loginController,

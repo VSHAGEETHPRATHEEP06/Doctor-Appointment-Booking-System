@@ -1,4 +1,4 @@
-import "../styles/HomePage.css";
+// HomePage.js
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Layout from "./../components/Layout";
@@ -11,6 +11,7 @@ import {
   SafetyCertificateOutlined,
   HeartOutlined
 } from '@ant-design/icons';
+import "../styles/HomePage.css";
 
 const HomePage = () => {
   const [doctors, setDoctors] = useState([]);
@@ -37,7 +38,6 @@ const HomePage = () => {
   return (
     <Layout>
       <div className="home-container">
-        {/* Hero Section */}
         <div className="medical-hero">
           <div className="hero-content">
             <div className="logo-wrapper">
@@ -54,7 +54,6 @@ const HomePage = () => {
           </div>
         </div>
 
-        {/* Features Section */}
         <div className="medical-features">
           <Row gutter={[24, 24]} justify="center">
             <Col xs={24} sm={12} md={8} lg={6}>
@@ -81,7 +80,6 @@ const HomePage = () => {
           </Row>
         </div>
 
-        {/* Doctors Section */}
         <div className="specialists-section">
           <div className="section-header">
             <h2 className="section-title">
@@ -93,13 +91,13 @@ const HomePage = () => {
             </p>
           </div>
           
-          <Row gutter={[32, 32]} justify="start">
+          <div className="doctors-container">
             {doctors.map((doctor) => (
-              <Col xs={24} sm={24} md={12} lg={12} xl={8} xxl={6} key={doctor._id}>
+              <div className="doctor-wrapper" key={doctor._id}>
                 <DoctorList doctor={doctor} />
-              </Col>
+              </div>
             ))}
-          </Row>
+          </div>
         </div>
       </div>
     </Layout>

@@ -20,18 +20,18 @@
 }
 
 .approve-btn {
-    background-color: #52c41a;
-    border-color: #52c41a;
+    background-color: #286c06;
+    border-color: #000000;
 }
 
 .approve-btn:hover {
-    background-color: #73d13d;
-    border-color: #73d13d;
+    background-color: #1e4906;
+    border-color: #173a03;
 }
 
 .reject-btn {
-    background-color: #ff4d4f;
-    border-color: #ff4d4f;
+    background-color: #5a0001;
+    border-color: #5a0001;
 }
 
 .ant-btn {

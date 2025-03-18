@@ -77,39 +77,56 @@ const deleteDoctorController = async (req, res) => {
       });
     }
 
-    // Find and delete doctor
-    const doctor = await Doctor.findOneAndDelete({ 
-      _id: req.params.doctorId 
-    });
-
+    // Find the doctor first to get the userId
+    const doctor = await doctorModel.findById(req.params.doctorId);
+    
     if (!doctor) {
       return res.status(404).json({
         success: false,
         message: "Doctor not found",
       });
     }
-
-    // Delete associated user if exists
-    if (doctor.userId && mongoose.Types.ObjectId.isValid(doctor.userId)) {
+    
+    // Store the userId before deleting the doctor
+    const userId = doctor.userId;
+    
+    // Delete the doctor record
+    await doctorModel.findByIdAndDelete(req.params.doctorId);
+    
+    // Update the user with a notification instead of deleting
+    if (userId && mongoose.Types.ObjectId.isValid(userId)) {
       try {
-        await User.findByIdAndDelete(doctor.userId);
+        const user = await userModel.findById(userId);
+        if (user) {
+          // Add notification about application rejection
+          user.notification.push({
+            type: "doctor-application-rejected",
+            message: "Your doctor application has been rejected",
+            onClickPath: "/notification",
+          });
+          
+          // Make sure isDoctor is set to false
+          user.isDoctor = false;
+          
+          await user.save();
+        }
       } catch (userError) {
-        console.error("User deletion error:", userError);
-        // Continue even if user deletion fails
+        console.error("User notification error:", userError);
+        // Continue even if notification fails
       }
     }
 
     res.status(200).json({
       success: true,
-      message: "Doctor deleted successfully",
+      message: "Doctor application rejected successfully",
     });
 
   } catch (error) {
     console.error("Delete Doctor Error:", error);
     res.status(500).json({
       success: false,
-      message: "Error while deleting doctor",
-      error: error.message, // Send specific error message
+      message: "Error while rejecting doctor application",
+      error: error.message,
     });
   }
 };

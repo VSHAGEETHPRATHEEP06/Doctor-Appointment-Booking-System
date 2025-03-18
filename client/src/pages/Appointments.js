@@ -1,10 +1,16 @@
+// Appointments.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Layout from "./../components/Layout";
 import moment from "moment";
-import "../styles/Appointments.css"
+import "../styles/Appointments.css";
 import { Table, Tag } from "antd";
-import { CalendarOutlined, UserOutlined, PhoneOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { 
+  CalendarOutlined, 
+  UserOutlined, 
+  PhoneOutlined, 
+  CheckCircleOutlined 
+} from "@ant-design/icons";
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -29,17 +35,17 @@ const Appointments = () => {
   }, []);
 
   const statusColors = {
-    pending: "gold",
-    approved: "green",
-    rejected: "red",
-    completed: "blue",
+    pending: { bg: "#f59e0b", text: "white" },
+    approved: { bg: "#000000", text: "white" },
+    rejected: { bg: "#800000", text: "white" },
+    completed: { bg: "#3182ce", text: "white" },
   };
 
   const columns = [
-    
     {
       title: <div className="column-header"><UserOutlined /> Doctor</div>,
       dataIndex: "name",
+      responsive: ['md'],
       render: (text, record) => (
         <div className="doctor-info">
           <span className="doctor-name">
@@ -51,10 +57,10 @@ const Appointments = () => {
         </div>
       ),
     },
-    
     {
       title: <div className="column-header"><PhoneOutlined /> Contact</div>,
       dataIndex: "phone",
+      responsive: ['lg'],
       render: (text, record) => (
         <div className="contact-info">
           <span>{record.doctorInfo.phone}</span>
@@ -67,26 +73,33 @@ const Appointments = () => {
       dataIndex: "date",
       render: (text, record) => (
         <div className="datetime-info">
-          <div className="date-box">
+          <span className="date-text">
             {moment(record.date).format("DD MMM YYYY")}
-          </div>
-          <div className="time-box">
+          </span>
+          <span className="time-text">
             {moment(record.time).format("hh:mm A")}
-          </div>
+          </span>
         </div>
       ),
     },
-
     {
       title: <div className="column-header"><CheckCircleOutlined /> Status</div>,
       dataIndex: "status",
       render: (status) => (
-        <Tag color={statusColors[status.toLowerCase()]} className="status-tag">
+        <Tag 
+          color={statusColors[status.toLowerCase()].bg}
+          className="status-tag"
+          style={{ 
+            color: statusColors[status.toLowerCase()].text,
+            borderRadius: '4px',
+            minWidth: '90px',
+            textAlign: 'center'
+          }}
+        >
           {status.toUpperCase()}
         </Tag>
       ),
     },
-    
   ];
 
   return (
@@ -105,6 +118,11 @@ const Appointments = () => {
           pagination={{
             pageSize: 5,
             showSizeChanger: false,
+          }}
+          scroll={{ x: true }}
+          responsive={{
+            breakpoint: 'md',
+            scroll: { x: 500 },
           }}
         />
       </div>

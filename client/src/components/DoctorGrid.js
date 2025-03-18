@@ -8,7 +8,8 @@ import {
   FaClock 
 } from "react-icons/fa";
 
-const DoctorList = ({ doctor }) => {
+// Individual Doctor Card Component
+const DoctorCard = ({ doctor }) => {
   const navigate = useNavigate();
 
   if (!doctor) {
@@ -17,19 +18,40 @@ const DoctorList = ({ doctor }) => {
 
   return (
     <div
-      className="doctor-card doctor-card-large"
+      className="doctor-card"
       onClick={() => navigate(`/doctor/book-appointment/${doctor._id}`)}
     >
       <div className="card-header">
-        <div className="header-icon">
-          <FaUserMd />
+        <div className="doctor-avatar">
+          {doctor.profileImage ? (
+            <img src={doctor.profileImage} alt={doctor.firstName} className="avatar-image" />
+          ) : (
+            <div className="avatar-placeholder">
+              <FaUserMd className="avatar-icon" />
+            </div>
+          )}
         </div>
-        <h3 className="doctor-name" style={{ color: "white" }}>
-          Dr. {doctor.firstName || ""} {doctor.lastName || ""}
-        </h3>
+        <div className="doctor-info">
+          <h3 className="doctor-name">
+            Dr. {doctor.firstName || ""} {doctor.lastName || ""}
+          </h3>
+          <div className="doctor-rating">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className={i < (doctor.rating || 4) ? "star-filled" : "star-empty"}>
+                ★
+              </span>
+            ))}
+            <span className="rating-count">({doctor.ratingCount || 42})</span>
+          </div>
+        </div>
       </div>
       
       <div className="card-body">
+        <div className="doctor-specialization">
+          <span className="specialization-badge">{doctor.specialization || "General Medicine"}</span>
+          {doctor.availability && <span className="availability-badge">Available Today</span>}
+        </div>
+        
         <div className="details-container">
           <div className="detail-item">
             <div className="icon-wrapper specialization-icon">
@@ -79,9 +101,28 @@ const DoctorList = ({ doctor }) => {
             </div>
           </div>
         </div>
+        
+        <div className="card-footer">
+          <button className="book-button">Book Appointment</button>
+        </div>
       </div>
     </div>
   );
 };
 
-export default DoctorList;
+// Doctor Grid Container Component
+const DoctorGrid = ({ doctors }) => {
+  if (!doctors || doctors.length === 0) {
+    return <div className="text-center p-4">No doctors available at the moment.</div>;
+  }
+
+  return (
+    <div className="doctors-grid">
+      {doctors.map((doctor) => (
+        <DoctorCard key={doctor._id} doctor={doctor} />
+      ))}
+    </div>
+  );
+};
+
+export default DoctorGrid;

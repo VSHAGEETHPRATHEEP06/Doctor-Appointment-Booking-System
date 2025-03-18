@@ -1,14 +1,18 @@
-import React from "react";
+// Layout.js
+import React, { useState, useEffect } from "react";
 import "../styles/LayoutStyles.css";
 import { adminMenu, userMenu } from "./../Data/data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Badge, message } from "antd";
+import { Badge, message, Drawer } from "antd";
+import { MenuOutlined, CloseOutlined } from "@ant-design/icons";
 
 const Layout = ({ children }) => {
   const { user } = useSelector((state) => state.user);
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -40,9 +44,79 @@ const Layout = ({ children }) => {
     ? doctorMenu
     : userMenu;
 
-    return (
-      <div className="main">
-        <div className="layout">
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarVisible(!sidebarVisible);
+  };
+
+  return (
+    <div className="main">
+      <div className="layout">
+        {/* Mobile Header */}
+        {isMobile && (
+          <div className="mobile-header">
+            <MenuOutlined className="hamburger-icon" onClick={toggleSidebar} />
+            <div className="mobile-logo">DOC APP</div>
+            <div className="mobile-user">
+              <Badge
+                count={user && user.notification.length}
+                onClick={() => navigate("/notification")}
+              >
+                <i className="fa-solid fa-bell notification-icon"></i>
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Sidebar Drawer */}
+        {isMobile && (
+          <Drawer
+            placement="left"
+            closable={false}
+            onClose={toggleSidebar}
+            visible={sidebarVisible}
+            bodyStyle={{ padding: 0, background: '#000' }}
+            width="280px"
+          >
+            <div className="sidebar-mobile">
+              <div className="mobile-sidebar-header">
+                <CloseOutlined onClick={toggleSidebar} className="close-icon" />
+              </div>
+              <div className="menu">
+                {SidebarMenu.map((menu) => {
+                  const isActive = location.pathname === menu.path;
+                  return (
+                    <div 
+                      className={`menu-item ${isActive && "active"}`} 
+                      key={menu.path}
+                      onClick={toggleSidebar}
+                    >
+                      <i className={menu.icon}></i>
+                      <Link to={menu.path}>{menu.name}</Link>
+                      {isActive && <div className="active-indicator"></div>}
+                    </div>
+                  );
+                })}
+                <div className="menu-item logout-item" onClick={handleLogout}>
+                  <i className="fa-solid fa-right-from-bracket"></i>
+                  <Link to="/login">Logout</Link>
+                </div>
+              </div>
+            </div>
+          </Drawer>
+        )}
+
+        {/* Desktop Sidebar */}
+        {!isMobile && (
           <div className="sidebar">
             <div className="logo">
               <div className="logo-container">
@@ -71,7 +145,11 @@ const Layout = ({ children }) => {
               </div>
             </div>
           </div>
-          <div className="content">
+        )}
+
+        <div className="content">
+          {/* Desktop Header */}
+          {!isMobile && (
             <div className="header">
               <div className="header-content">
                 <Badge
@@ -87,11 +165,13 @@ const Layout = ({ children }) => {
                 </div>
               </div>
             </div>
-            <div className="body">{children}</div>
-          </div>
+          )}
+
+          <div className="body">{children}</div>
         </div>
       </div>
-    );
-  };
-  
-  export default Layout;
+    </div>
+  );
+};
+
+export default Layout;
