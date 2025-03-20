@@ -15,6 +15,10 @@ router.get("/getAllUsers", authMiddleware, getAllUsersController);
 //GET METHOD || DOCTORS
 router.get("/getAllDoctors", authMiddleware, getAllDoctorsController);
 
+// Add these routes
+// router.post("/getAdminInfo", authMiddleware, adminMiddleware, adminCtrl.getAdminInfo);
+// router.post("/updateProfile", authMiddleware, adminMiddleware, adminCtrl.updateAdminProfile);
+
 //POST ACCOUNT STATUS
 router.post(
   "/changeAccountStatus",

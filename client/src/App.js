@@ -14,6 +14,9 @@ import Profile from "./pages/doctor/Profile";
 import BookingPage from "./pages/BookingPage";
 import Appointments from "./pages/Appointments";
 import DoctorAppointments from "./pages/doctor/DoctorAppointments";
+import PatientProfile from "./pages/PatientProfile";
+import AdminProfile from "./components/AdminProfile";
+
 function App() {
   const { loading } = useSelector((state) => state.alerts);
   return (
@@ -44,6 +47,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Doctors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user/profile"
+              element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <PatientProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user/profile/:id"
+              element={
+                <ProtectedRoute>
+                  <PatientProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminProfile />
                 </ProtectedRoute>
               }
             />

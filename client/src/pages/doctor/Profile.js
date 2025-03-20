@@ -23,6 +23,7 @@ import "../../styles/Profile.css";
 const Profile = () => {
   const { user } = useSelector((state) => state.user);
   const [doctor, setDoctor] = useState(null);
+  const [timeRange, setTimeRange] = useState([]);
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -34,6 +35,16 @@ const Profile = () => {
     }
   }, [user, navigate]);
 
+  const handleTimeChange = (times) => {
+    if (times && times.length === 2) {
+      let [start, end] = times;
+      if (end.isSameOrBefore(start)) {
+        end = start.clone().add(1, 'hour');
+      }
+      setTimeRange([start, end]);
+    }
+  };
+
   const handleFinish = async (values) => {
     try {
       if (!user?._id) return;
@@ -44,10 +55,7 @@ const Profile = () => {
         {
           ...values,
           userId: user._id,
-          timings: [
-            moment(values.timings[0]).format("HH:mm"),
-            moment(values.timings[1]).format("HH:mm"),
-          ],
+          timings: timeRange.map(t => t.format("HH:mm")),
         },
         {
           headers: {
@@ -84,6 +92,19 @@ const Profile = () => {
       );
       if (res.data.success) {
         setDoctor(res.data.data);
+        // Initialize time range
+        const initialTimes = [
+          moment(res.data.data.timings[0], "HH:mm"),
+          moment(res.data.data.timings[1], "HH:mm")
+        ];
+        if (initialTimes.every(t => t.isValid())) {
+          setTimeRange(initialTimes);
+        } else {
+          setTimeRange([
+            moment().startOf('hour'),
+            moment().startOf('hour').add(1, 'hour')
+          ]);
+        }
       } else {
         message.error(res.data.message);
       }
@@ -130,16 +151,11 @@ const Profile = () => {
         </div>
         
         <Form
+          key={doctor ? 'loaded' : 'loading'}
           layout="vertical"
           onFinish={handleFinish}
           className="doctor-form"
-          initialValues={{
-            ...doctor,
-            timings: [
-              moment(doctor.timings[0], "HH:mm"),
-              moment(doctor.timings[1], "HH:mm"),
-            ],
-          }}
+          initialValues={doctor}
         >
           <div className="form-section">
             <h3 className="section-title"><UserOutlined /> Personal Information</h3>
@@ -148,12 +164,17 @@ const Profile = () => {
                 <Form.Item
                   label="First Name"
                   name="firstName"
-                  rules={[{ required: true, message: "Please enter your first name" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter your first name",
+                    whitespace: true 
+                  }]}
                 >
                   <Input 
                     prefix={<UserOutlined className="form-input-icon" />}
                     placeholder="Enter first name"
                     className="form-input"
+                    maxLength={50}
                   />
                 </Form.Item>
               </Col>
@@ -161,12 +182,17 @@ const Profile = () => {
                 <Form.Item
                   label="Last Name"
                   name="lastName"
-                  rules={[{ required: true, message: "Please enter your last name" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter your last name",
+                    whitespace: true 
+                  }]}
                 >
                   <Input 
                     prefix={<UserOutlined className="form-input-icon" />}
                     placeholder="Enter last name"
                     className="form-input"
+                    maxLength={50}
                   />
                 </Form.Item>
               </Col>
@@ -174,12 +200,16 @@ const Profile = () => {
                 <Form.Item
                   label="Phone Number"
                   name="phone"
-                  rules={[{ required: true, message: "Please enter your phone number" }]}
+                  rules={[
+                    { required: true, message: "Please enter your phone number" },
+                    { pattern: /^[0-9]{10}$/, message: "Invalid phone number" }
+                  ]}
                 >
                   <Input 
                     prefix={<PhoneOutlined className="form-input-icon" />}
-                    placeholder="Enter phone number"
+                    placeholder="Enter 10-digit phone number"
                     className="form-input"
+                    maxLength={10}
                   />
                 </Form.Item>
               </Col>
@@ -200,7 +230,13 @@ const Profile = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12} lg={8}>
-                <Form.Item label="Website" name="website">
+                <Form.Item 
+                  label="Website" 
+                  name="website"
+                  rules={[
+                    { type: "url", message: "Please enter a valid URL" }
+                  ]}
+                >
                   <Input 
                     prefix={<GlobalOutlined className="form-input-icon" />}
                     placeholder="Enter website URL"
@@ -212,7 +248,12 @@ const Profile = () => {
                 <Form.Item
                   label="Clinic Address"
                   name="address"
-                  rules={[{ required: true, message: "Please enter your clinic address" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter your clinic address",
+                    min: 10,
+                    max: 200 
+                  }]}
                 >
                   <Input 
                     prefix={<EnvironmentOutlined className="form-input-icon" />}
@@ -231,7 +272,12 @@ const Profile = () => {
                 <Form.Item
                   label="Specialization"
                   name="specialization"
-                  rules={[{ required: true, message: "Please enter your specialization" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter your specialization",
+                    min: 3,
+                    max: 50 
+                  }]}
                 >
                   <Input 
                     prefix={<ExperimentOutlined className="form-input-icon" />}
@@ -244,12 +290,19 @@ const Profile = () => {
                 <Form.Item
                   label="Experience"
                   name="experience"
-                  rules={[{ required: true, message: "Please enter your experience" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter valid number of years",
+                    pattern: new RegExp(/^[0-9]+$/)
+                  }]}
                 >
                   <Input 
                     prefix={<CalendarOutlined className="form-input-icon" />}
                     placeholder="Enter years of experience"
                     className="form-input"
+                    type="number"
+                    min={0}
+                    max={50}
                   />
                 </Form.Item>
               </Col>
@@ -257,25 +310,54 @@ const Profile = () => {
                 <Form.Item
                   label="Consultation Fee"
                   name="feesPerConsultation"
-                  rules={[{ required: true, message: "Please enter consultation fee" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please enter a valid fee amount",
+                    pattern: new RegExp(/^[0-9]+$/)
+                  }]}
                 >
                   <Input 
                     prefix={<WalletOutlined className="form-input-icon" />}
                     placeholder="Enter fee amount"
                     className="form-input"
+                    type="number"
+                    min={0}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12} lg={8}>
                 <Form.Item
                   label="Availability"
-                  name="timings"
-                  rules={[{ required: true, message: "Please set availability hours" }]}
+                  rules={[{ 
+                    required: true, 
+                    message: "Please set availability hours",
+                    validator: (_, value) => {
+                      if (!timeRange || timeRange.length !== 2) {
+                        return Promise.reject('Please select both start and end times');
+                      }
+                      if (timeRange[0].isSameOrAfter(timeRange[1])) {
+                        return Promise.reject('End time must be after start time');
+                      }
+                      return Promise.resolve();
+                    }
+                  }]}
                 >
                   <TimePicker.RangePicker
+                    value={timeRange}
+                    onChange={handleTimeChange}
                     format="HH:mm"
                     className="time-picker"
                     suffixIcon={<ScheduleOutlined />}
+                    minuteStep={15}
+                    showNow={false}
+                    disabledTime={(current, type) => ({
+                      disabledMinutes: () => 
+                        Array.from({ length: 60 }, (_, i) => i)
+                          .filter(m => m % 15 !== 0)
+                    })}
+                    placeholder={['Start Time', 'End Time']}
+                    allowClear={false}
+                    order={false}
                   />
                 </Form.Item>
               </Col>

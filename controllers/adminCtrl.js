@@ -131,6 +131,61 @@ const deleteDoctorController = async (req, res) => {
   }
 };
 
+exports.getAdminInfo = async (req, res) => {
+  try {
+    const admin = await Admin.findOne({ user: req.body.userId })
+      .populate('user', 'name email')
+      .select('-createdAt -updatedAt -__v');
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin profile not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: admin
+    });
+  } catch (error) {
+    console.error("Get admin error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching admin information"
+    });
+  }
+};
+
+exports.updateAdminProfile = async (req, res) => {
+  try {
+    const updatedAdmin = await Admin.findOneAndUpdate(
+      { user: req.body.userId },
+      req.body,
+      { new: true, runValidators: true }
+    ).populate('user', 'name email');
+
+    if (!updatedAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin profile not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedAdmin
+    });
+  } catch (error) {
+    console.error("Update admin error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating admin profile"
+    });
+  }
+};
+
 module.exports = {
   getAllDoctorsController,
   getAllUsersController,

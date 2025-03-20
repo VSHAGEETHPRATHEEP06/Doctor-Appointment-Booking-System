@@ -33,7 +33,7 @@ const Layout = ({ children }) => {
     },
     {
       name: "Profile",
-      path: `/doctor/profile/${user?._id}`,
+      path: "/doctor/profile",
       icon: "fa-solid fa-user",
     },
   ];
@@ -45,17 +45,24 @@ const Layout = ({ children }) => {
     : userMenu;
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarVisible(!sidebarVisible);
+  const toggleSidebar = () => setSidebarVisible(!sidebarVisible);
+
+  const getProfilePath = () => {
+    if (user?.isAdmin) return "/admin/profile";
+    if (user?.isDoctor) return "/doctor/profile";
+    return "/user/profile";
+  };
+
+  const getUserRole = () => {
+    if (user?.isAdmin) return "Admin";
+    if (user?.isDoctor) return "Doctor";
+    return "User";
   };
 
   return (
@@ -68,7 +75,7 @@ const Layout = ({ children }) => {
             <div className="mobile-logo">DOC APP</div>
             <div className="mobile-user">
               <Badge
-                count={user && user.notification.length}
+                count={user?.notification?.length || 0}
                 onClick={() => navigate("/notification")}
               >
                 <i className="fa-solid fa-bell notification-icon"></i>
@@ -153,7 +160,7 @@ const Layout = ({ children }) => {
             <div className="header">
               <div className="header-content">
                 <Badge
-                  count={user && user.notification.length}
+                  count={user?.notification?.length || 0}
                   onClick={() => navigate("/notification")}
                   className="notification-badge"
                 >
@@ -161,7 +168,23 @@ const Layout = ({ children }) => {
                 </Badge>
                 <div className="user-profile">
                   <span className="user-avatar">👤</span>
-                  <Link to="/profile" className="user-name">{user?.name}</Link>
+                  <Link 
+                    to={getProfilePath()}
+                    className="user-name"
+                  >
+                    {user?.name} 
+                    <span 
+                      className={`user-role ${
+                        user?.isAdmin 
+                          ? 'role-admin' 
+                          : user?.isDoctor 
+                          ? 'role-doctor' 
+                          : 'role-user'
+                      }`}
+                    >
+                      ({getUserRole()})
+                    </span>
+                  </Link>
                 </div>
               </div>
             </div>

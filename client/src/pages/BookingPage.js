@@ -69,6 +69,11 @@ const BookingPage = () => {
       if (!date && !time) {
         return alert("Date & Time Required");
       }
+      if (!isAvailable) {
+        message.error("Please check availability first");
+        return;
+      }
+
       dispatch(showLoading());
       const res = await axios.post(
         "/api/v1/user/book-appointment",
@@ -95,6 +100,10 @@ const BookingPage = () => {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    setIsAvailable(false);
+  }, [date, time]);
 
   useEffect(() => {
     getUserData();
@@ -171,6 +180,7 @@ const BookingPage = () => {
                   <button 
                     className="book-now-btn"
                     onClick={handleBooking}
+                    disabled={!isAvailable}
                   >
                     Confirm Appointment
                   </button>
