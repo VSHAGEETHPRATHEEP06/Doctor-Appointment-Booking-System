@@ -13,6 +13,7 @@ const {
   updateAppointmentController,
   deleteAppointmentController,
   requestAccessController,
+  rescheduleAppointmentController,
 } = require("../controllers/userCtrl");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -66,6 +67,9 @@ router.put("/update-appointment/:appointmentId", authMiddleware, updateAppointme
 
 //Delete Appointment
 router.delete("/delete-appointment/:appointmentId", authMiddleware, deleteAppointmentController);
+
+//Reschedule Appointment
+router.post("/reschedule-appointment", authMiddleware, rescheduleAppointmentController);
 
 //Request Access for Blocked Users
 router.post("/request-access", requestAccessController);

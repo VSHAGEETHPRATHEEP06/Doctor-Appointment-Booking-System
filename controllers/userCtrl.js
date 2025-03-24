@@ -409,7 +409,7 @@ const bookAppointmentController = async (req, res) => {
 const bookingAvailabilityController = async (req, res) => {
   try {
     console.log("Received availability check request:", req.body);
-    const { date, time, doctorId } = req.body;
+    const { date, time, doctorId, appointmentId } = req.body;
     
     // Input validation
     if (!date || !doctorId) {
@@ -498,38 +498,75 @@ const bookingAvailabilityController = async (req, res) => {
       validDoctorId = doctorId; // Fallback to original value
     }
     
-    const appointments = await appointmentModel.find({
+    const appointmentQuery = {
       doctorId: validDoctorId,
       date: formattedDate,
-      time: time || { $exists: false },
-      status: { $ne: "rejected" }
-    });
+      status: { $nin: ["cancelled", "rejected"] }
+    };
     
-    console.log("Checking availability with criteria:", {
-      doctorId: validDoctorId,
-      date: formattedDate,
-      time: time || { $exists: false }
-    });
-
-    console.log("Found existing appointments:", appointments);
-
-    if (appointments.length > 0) {
-      return res.status(409).send({
-        success: false,
-        message: "This time slot is already booked",
+    // If time is provided, add it to the query
+    if (time) {
+      appointmentQuery.time = time;
+    }
+    
+    // If appointmentId is provided, exclude that appointment from the check
+    // This handles the case where we're checking availability for editing an existing appointment
+    if (appointmentId) {
+      appointmentQuery._id = { $ne: appointmentId };
+    }
+    
+    const appointments = await appointmentModel.find(appointmentQuery);
+    console.log(`Found ${appointments.length} appointments for date ${formattedDate}${time ? ` at time ${time}` : ''}`);
+    
+    // If a specific time was requested, check if there is an appointment at that time
+    if (time) {
+      if (appointments.length > 0) {
+        console.log("Appointment already exists at requested time");
+        return res.status(409).send({
+          success: false,
+          message: "This time slot is already booked",
+          bookedSlots: appointments.map(app => app.time)
+        });
+      }
+    }
+    
+    // Return available time slots
+    if (doctor.timings) {
+      console.log("Generating available time slots based on doctor's timings");
+      let startTime, endTime;
+      
+      if (Array.isArray(doctor.timings) && doctor.timings.length === 2) {
+        startTime = moment(doctor.timings[0], "HH:mm");
+        endTime = moment(doctor.timings[1], "HH:mm");
+      } else if (typeof doctor.timings === 'object') {
+        startTime = moment(doctor.timings.start || doctor.timings[0], "HH:mm");
+        endTime = moment(doctor.timings.end || doctor.timings[1], "HH:mm");
+      }
+      
+      const bookedSlots = appointments.map(app => app.time);
+      console.log("Booked slots:", bookedSlots);
+      
+      return res.status(200).send({
+        success: true,
+        message: "Available time slots retrieved",
+        bookedSlots,
+        startTime: startTime ? startTime.format("HH:mm") : null,
+        endTime: endTime ? endTime.format("HH:mm") : null
       });
     }
-
+    
+    // Default response with the booked slots
     return res.status(200).send({
       success: true,
-      message: "Appointment slot is available",
+      message: "Available time slots retrieved",
+      bookedSlots: appointments.map(app => app.time)
     });
   } catch (error) {
     console.error("Error in bookingAvailabilityController:", error);
     return res.status(500).send({
       success: false,
-      message: "Error checking appointment availability",
-      error: error.message,
+      message: "Error checking booking availability",
+      error: error.message
     });
   }
 };
@@ -677,7 +714,11 @@ const updateAppointmentController = async (req, res) => {
       doctor.notification.push({
         type: "appointment-updated",
         message: notificationMessage,
-        onClickPath: "/doctor/appointments",
+        data: {
+          appointmentId: appointment._id,
+          name: appointment.userInfo.name,
+          onClickPath: "/doctor/appointments",
+        },
       });
       await doctor.save();
     }
@@ -685,7 +726,7 @@ const updateAppointmentController = async (req, res) => {
     res.status(200).send({
       success: true,
       message: "Appointment updated successfully",
-      data: appointment,
+      data: appointment
     });
   } catch (error) {
     console.log(error);
@@ -835,63 +876,185 @@ const requestAccessController = async (req, res) => {
   }
 };
 
-// reschedule appointment controller
+// Reschedule Appointment Controller
 const rescheduleAppointmentController = async (req, res) => {
   try {
     const { appointmentId, date, time, doctorId, doctorInfo, userInfo, sendNotification } = req.body;
     
+    // Input validation
     if (!appointmentId || !date || !time || !doctorId) {
       return res.status(400).send({
         success: false,
-        message: "Missing required fields for rescheduling"
+        message: "Missing required fields",
       });
     }
     
-    // Find and update the appointment
-    const appointment = await appointmentModel.findByIdAndUpdate(
-      appointmentId,
-      {
-        status: "rescheduled",
-        rescheduleDate: date,
-        rescheduleTime: time
-      },
-      { new: true }
-    );
+    console.log(`Rescheduling appointment ${appointmentId} to ${date} at ${time}`);
+    
+    // Find the appointment
+    const appointment = await appointmentModel.findById(appointmentId);
     
     if (!appointment) {
       return res.status(404).send({
         success: false,
-        message: "Appointment not found"
+        message: "Appointment not found",
       });
     }
     
-    // If sendNotification is true, send notification to doctor
-    if (sendNotification) {
-      // Find the doctor user
-      const doctor = await doctorModel.findOne({ _id: doctorId });
+    // Check if the appointment belongs to the logged-in user
+    const appointmentUserId = appointment.userId.toString();
+    const requestUserId = req.userId.toString();
+    
+    if (appointmentUserId !== requestUserId) {
+      return res.status(403).send({
+        success: false,
+        message: "Unauthorized: This appointment doesn't belong to you",
+      });
+    }
+    
+    // Check if the appointment is rejected (can't modify rejected appointments)
+    if (appointment.status.toLowerCase() === 'rejected') {
+      return res.status(400).send({
+        success: false,
+        message: "Rejected appointments cannot be modified",
+      });
+    }
+
+    // Check if the requested time slot is available
+    // First, check if the doctor is available at that time
+    const doctor = await doctorModel.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).send({
+        success: false,
+        message: "Doctor not found",
+      });
+    }
+
+    // Check doctor's working hours
+    if (doctor.timings) {
+      let startTime, endTime;
       
-      if (doctor && doctor.userId) {
-        const doctorUser = await userModel.findOne({ _id: doctor.userId });
+      if (Array.isArray(doctor.timings) && doctor.timings.length === 2) {
+        startTime = doctor.timings[0];
+        endTime = doctor.timings[1];
+      } else if (typeof doctor.timings === 'object') {
+        startTime = doctor.timings.start || doctor.timings[0];
+        endTime = doctor.timings.end || doctor.timings[1];
+      }
+      
+      if (startTime && endTime) {
+        const doctorStart = moment(startTime, "HH:mm");
+        const doctorEnd = moment(endTime, "HH:mm");
+        const requestedTime = moment(time, "HH:mm");
         
-        if (doctorUser) {
-          // Create notification for doctor
-          const notification = {
-            type: "Appointment Rescheduled",
-            message: `Patient ${userInfo.name} has requested to reschedule their appointment to ${date} at ${time}`,
-            data: {
-              appointmentId: appointment._id,
-              name: userInfo.name,
-              onClickPath: "/doctor-appointments"
-            },
-            createdAt: new Date()
-          };
-          
-          // Add to doctor's notifications
-          doctorUser.notification.push(notification);
-          await doctorUser.save();
-          
-          console.log("Notification sent to doctor for rescheduled appointment");
+        if (requestedTime.isBefore(doctorStart) || requestedTime.isAfter(doctorEnd)) {
+          return res.status(400).send({
+            success: false,
+            message: `Doctor is only available between ${startTime} and ${endTime}`,
+          });
         }
+      }
+    }
+
+    // Check if another appointment exists at the same time (but exclude this appointment)
+    const existingAppointment = await appointmentModel.findOne({
+      _id: { $ne: appointmentId }, // exclude this appointment
+      doctorId,
+      date,
+      time,
+      status: { $nin: ["cancelled", "rejected"] }
+    });
+
+    if (existingAppointment) {
+      return res.status(409).send({
+        success: false,
+        message: "This time slot is already booked. Please select another time slot.",
+      });
+    }
+    
+    // Store previous values for history
+    const previousDate = appointment.date;
+    const previousTime = appointment.time;
+    const previousStatus = appointment.status;
+
+    // Create modification history entry
+    const modificationEntry = {
+      modifiedBy: 'user',
+      modifiedDate: new Date(),
+      previousDate,
+      previousTime,
+      previousStatus,
+      newDate: date,
+      newTime: time,
+      newStatus: previousStatus.toLowerCase() === 'approved' ? 'rescheduled' : 'pending',
+    };
+    
+    // Update appointment with modification history
+    appointment.date = date;
+    appointment.time = time;
+    appointment.lastModified = new Date();
+    appointment.modifiedBy = 'user';
+    
+    // Set the status based on previous status
+    if (previousStatus.toLowerCase() === 'approved') {
+      appointment.status = 'rescheduled';
+    }
+    
+    // Add modification to history
+    if (!appointment.modificationHistory) {
+      appointment.modificationHistory = [];
+    }
+    appointment.modificationHistory.push(modificationEntry);
+    
+    await appointment.save();
+    
+    // Send notification to doctor
+    if (sendNotification && doctor.userId) {
+      const doctorUser = await userModel.findOne({ _id: doctor.userId });
+      
+      if (doctorUser) {
+        const displayDate = moment(date, "DD-MM-YYYY").format("DD MMM YYYY");
+        const displayTime = moment(time, "HH:mm").format("hh:mm A");
+        
+        let notificationMessage = "";
+        if (previousStatus.toLowerCase() === 'approved') {
+          notificationMessage = `Appointment with ${appointment.userInfo.name} has been rescheduled to ${displayDate} at ${displayTime} and requires your approval`;
+        } else {
+          notificationMessage = `Appointment with ${appointment.userInfo.name} has been updated to ${displayDate} at ${displayTime}`;
+        }
+        
+        // Make sure notification array exists
+        if (!doctorUser.notification) {
+          doctorUser.notification = [];
+        }
+        
+        // Add notification to doctor's notification array
+        doctorUser.notification.push({
+          type: "Appointment Reschedule",
+          message: notificationMessage,
+          data: {
+            appointmentId: appointment._id,
+            appointmentInfo: {
+              doctorName: `${doctor.firstName} ${doctor.lastName}`,
+              date,
+              time,
+              status: appointment.status,
+              modifiedBy: 'user'
+            },
+            modificationDetails: {
+              previousDate,
+              previousTime,
+              previousStatus,
+              newDate: date,
+              newTime: time,
+              newStatus: appointment.status
+            },
+            onClickPath: "/doctor-appointments"
+          },
+          time: new Date()
+        });
+        
+        await doctorUser.save();
       }
     }
     
@@ -900,7 +1063,6 @@ const rescheduleAppointmentController = async (req, res) => {
       message: "Appointment rescheduled successfully",
       data: appointment
     });
-    
   } catch (error) {
     console.error("Error in rescheduleAppointmentController:", error);
     return res.status(500).send({
@@ -911,10 +1073,10 @@ const rescheduleAppointmentController = async (req, res) => {
   }
 };
 
-module.exports = { 
-  loginController, 
-  registerController, 
-  authController, 
+module.exports = {
+  loginController,
+  registerController,
+  authController,
   applyDoctorController,
   getAllNotificationController,
   deleteAllNotificationController,
@@ -925,5 +1087,5 @@ module.exports = {
   updateAppointmentController,
   deleteAppointmentController,
   requestAccessController,
-  rescheduleAppointmentController
+  rescheduleAppointmentController,
 };

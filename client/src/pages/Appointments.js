@@ -65,22 +65,35 @@ const Appointments = () => {
     }
   };
   
-  // Show edit modal with appointment data
-  // Function to check doctor's available times for a selected date
-  const checkDoctorAvailability = async (date, doctorId, time) => {
-    if (!date || !doctorId) return;
-    
+  // Check doctor availability
+  const checkDoctorAvailability = async (date, doctorId, timeObj, appointmentId = null) => {
     try {
       setCheckingAvailability(true);
+      setAvailableTimeSlots([]);
+      
+      // Format the date for the API
       const formattedDate = moment(date).format('DD-MM-YYYY');
       
+      // Format the time if it exists
+      const time = timeObj ? moment(timeObj).format('HH:mm') : null;
+      
+      console.log(`Checking availability for doctor ${doctorId} on ${formattedDate}${time ? ` at ${time}` : ''}`);
+      
+      const requestData = {
+        date: formattedDate,
+        doctorId,
+        time
+      };
+      
+      // If we're checking for an existing appointment, include the appointmentId
+      // This will prevent conflicts with the appointment we're trying to reschedule
+      if (appointmentId) {
+        requestData.appointmentId = appointmentId;
+      }
+      
       const res = await axios.post(
-        '/api/v1/user/booking-availability', 
-        {
-          doctorId: doctorId,
-          date: formattedDate,
-          time: time ? moment(time).format('HH:mm') : null,
-        },
+        "/api/v1/user/booking-availability", 
+        requestData,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -89,14 +102,10 @@ const Appointments = () => {
       );
       
       setCheckingAvailability(false);
+      
       if (res.data.success) {
-        // Get the available times from the response
-        // If no specific slots returned but success is true, create default slots based on doctor hours
-        if (res.data.data && res.data.data.length > 0) {
-          setAvailableTimeSlots(res.data.data);
-          return res.data.data;
-        } else if (res.data.startTime && res.data.endTime) {
-          // If backend doesn't return specific slots but gives hours range
+        // If the API returns specific start and end times, generate slots
+        if (res.data.startTime && res.data.endTime) {
           const startTime = moment(res.data.startTime, "HH:mm");
           const endTime = moment(res.data.endTime, "HH:mm");
           const slots = [];
@@ -110,6 +119,10 @@ const Appointments = () => {
           
           setAvailableTimeSlots(slots);
           return slots;
+        } else if (res.data.data && res.data.data.length > 0) {
+          // If API returns specific slots, use them
+          setAvailableTimeSlots(res.data.data);
+          return res.data.data;
         } else {
           // Default behavior in case no specific slot info
           setAvailableTimeSlots(['09:00', '09:15', '09:30', '09:45', '10:00', '10:15', '10:30', '10:45', '11:00']);
@@ -143,9 +156,9 @@ const Appointments = () => {
     setSelectedDate(dateObj);
     setSelectedTime(timeObj);
     
-    // Check doctor availability for the current date
+    // Check doctor availability for the current date, passing the appointment ID
     if (appointment.doctorId) {
-      checkDoctorAvailability(dateObj, appointment.doctorId, timeObj);
+      checkDoctorAvailability(dateObj, appointment.doctorId, timeObj, appointment._id);
     }
     
     // Use setTimeout to ensure the form is properly mounted before setting values
@@ -545,7 +558,7 @@ const Appointments = () => {
         {/* Edit Appointment Modal */}
         <Modal
           title={
-            <div className="admin-popup-title" style={{ 
+            <div className="admin-popup-title" id="edit-appointment-modal-title" style={{ 
               display: 'flex', 
               alignItems: 'center', 
               borderBottom: '2px solid #f0f0f0', 
@@ -573,9 +586,11 @@ const Appointments = () => {
           modalRender={(node) => <div onMouseDown={(e) => e.stopPropagation()}>{node}</div>}
           styles={{ body: { padding: '24px', paddingTop: '12px' } }}
           style={{ borderRadius: '8px', overflow: 'hidden' }}
+          aria-labelledby="edit-appointment-modal-title"
+          aria-describedby="edit-appointment-modal-description"
         >
           <div className="admin-popup-content">
-            <p className="admin-popup-message" style={{ 
+            <p className="admin-popup-message" id="edit-appointment-modal-description" style={{ 
               fontSize: '14px', 
               lineHeight: '1.5', 
               color: '#595959',
@@ -649,7 +664,7 @@ const Appointments = () => {
                       
                       // Check availability for the new date
                       if (value && selectedAppointment?.doctorId) {
-                        checkDoctorAvailability(value.toDate(), selectedAppointment.doctorId, null);
+                        checkDoctorAvailability(value.toDate(), selectedAppointment.doctorId, null, selectedAppointment._id);
                       }
                     }}
                   />
@@ -767,7 +782,7 @@ const Appointments = () => {
         {/* Delete Appointment Confirmation Modal */}
         <Modal
           title={
-            <div className="admin-popup-title" style={{ 
+            <div className="admin-popup-title" id="delete-appointment-modal-title" style={{ 
               display: 'flex', 
               alignItems: 'center', 
               borderBottom: '2px solid #f0f0f0', 
@@ -795,9 +810,11 @@ const Appointments = () => {
           modalRender={(node) => <div onMouseDown={(e) => e.stopPropagation()}>{node}</div>}
           styles={{ body: { padding: '24px', paddingTop: '12px' } }}
           style={{ borderRadius: '8px', overflow: 'hidden' }}
+          aria-labelledby="delete-appointment-modal-title"
+          aria-describedby="delete-appointment-modal-description"
         >
           <div className="admin-popup-content">
-            <p className="admin-popup-message" style={{ 
+            <p className="admin-popup-message" id="delete-appointment-modal-description" style={{ 
               fontSize: '14px', 
               lineHeight: '1.5', 
               color: '#595959',
@@ -888,7 +905,7 @@ const Appointments = () => {
         {/* Add Appointment History Modal */}
         <Modal
           title={
-            <div className="admin-popup-title" style={{ 
+            <div className="admin-popup-title" id="history-appointment-modal-title" style={{ 
               display: 'flex', 
               alignItems: 'center', 
               borderBottom: '2px solid #f0f0f0', 
@@ -923,9 +940,11 @@ const Appointments = () => {
           destroyOnClose={true}
           styles={{ body: { padding: '24px', paddingTop: '12px' } }}
           style={{ borderRadius: '8px', overflow: 'hidden' }}
+          aria-labelledby="history-appointment-modal-title"
+          aria-describedby="history-appointment-description"
         >
           {selectedAppointment && (
-            <div className="history-container">
+            <div className="history-container" id="history-appointment-description">
               <Card
                 style={{ marginBottom: '20px' }}
                 title={
