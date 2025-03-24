@@ -2,8 +2,6 @@
 
 A comprehensive healthcare appointment management solution built using the MERN stack (MongoDB, Express.js, React.js, and Node.js). This system streamlines the process of scheduling and managing medical appointments between patients, doctors, and administrators.
 
-![Doctor Appointment System](https://your-screenshot-url.png)
-
 ## 🌟 Features
 
 ### User Roles
