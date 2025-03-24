@@ -2,22 +2,37 @@ const JWT = require("jsonwebtoken");
 
 module.exports = async (req, res, next) => {
   try {
-    const token = req.headers["authorization"].split(" ")[1];
+    const authHeader = req.headers["authorization"];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).send({
+        message: "Missing or invalid Authorization header",
+        success: false,
+      });
+    }
+    
+    const token = authHeader.split(" ")[1];
     JWT.verify(token, process.env.JWT_SECRET, (err, decode) => {
       if (err) {
-        return res.status(200).send({
-          message: "Auth Failed",
+        console.log('JWT Verification Error:', err);
+        return res.status(401).send({
+          message: "Authentication failed",
           success: false,
         });
       } else {
-        req.body.userId = decode.id;
+        // Convert the MongoDB ObjectId to a string to avoid comparison issues
+        const userId = decode.id.toString();
+        console.log('User authenticated with ID:', userId);
+        
+        // Set userId in both req.userId and req.body.userId for consistency
+        req.userId = userId;
+        req.body.userId = userId;
         next();
       }
     });
   } catch (error) {
-    console.log(error);
+    console.log('Auth Middleware Error:', error);
     res.status(401).send({
-      message: "Auth Failed",
+      message: "Authentication failed - invalid token",
       success: false,
     });
   }

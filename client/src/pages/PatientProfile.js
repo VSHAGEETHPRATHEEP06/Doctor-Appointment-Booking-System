@@ -22,13 +22,17 @@ import {
   FileTextOutlined
 } from '@ant-design/icons';
 import "../styles/Profile.css";
+import "../styles/CustomDatePicker.css";
 
 const PatientProfile = () => {
   const { user } = useSelector((state) => state.user);
-  const [loading, setLoading] = useState(false);
+  const [patient, setPatient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Check if user is logged in
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -36,24 +40,106 @@ const PatientProfile = () => {
     }
   }, [user, navigate]);
 
+  // Fetch patient info
+  useEffect(() => {
+    if (user?._id) {
+      getPatientInfo();
+    }
+  }, [user]);
+
+  const getPatientInfo = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(
+        "/api/v1/patient/getPatientInfo",
+        { userId: user._id },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.success) {
+        setPatient(res.data.data);
+        // Set form values from the patient data
+        setFormValues(res.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching patient info:", error);
+      // If no profile exists yet, that's okay - we'll create one
+      if (error.response && error.response.status === 404) {
+        console.log("No profile exists yet");
+      } else {
+        message.error("Failed to fetch profile data");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Set form values from patient data
+  const setFormValues = (patientData) => {
+    if (!patientData) return;
+
+    const dobMoment = patientData.dob ? moment(patientData.dob) : null;
+
+    form.setFieldsValue({
+      firstName: patientData.firstName,
+      lastName: patientData.lastName,
+      dob: dobMoment,
+      phone: patientData.phone,
+      email: user.email,
+      bloodGroup: patientData.bloodGroup,
+      medicalProblem: patientData.medicalProblem,
+      problemDuration: patientData.problemDuration,
+      height: patientData.height,
+      weight: patientData.weight,
+      // Address fields
+      street: patientData.address?.street,
+      city: patientData.address?.city,
+      state: patientData.address?.state,
+      zip: patientData.address?.zip,
+      // Emergency contact
+      'emergencyContact.name': patientData.emergencyContact?.name,
+      'emergencyContact.relationship': patientData.emergencyContact?.relationship,
+      'emergencyContact.phone': patientData.emergencyContact?.phone
+    });
+  };
+
   const handleFinish = async (values) => {
     try {
       if (!user?._id) return;
       
+      // Format the values properly
+      const formattedValues = {
+        ...values,
+        userId: user._id,
+        dob: moment(values.dob).format("YYYY-MM-DD"),
+        address: {
+          street: values.street,
+          city: values.city,
+          state: values.state,
+          zip: values.zip
+        }
+        // Emergency contact is already properly nested in the form
+      };
+      
+      // Remove individual address fields from the root object
+      delete formattedValues.street;
+      delete formattedValues.city;
+      delete formattedValues.state;
+      delete formattedValues.zip;
+      delete formattedValues.email; // Email is not needed in the profile
+      
       dispatch(showLoading());
+      
+      // Determine whether to create or update profile
+      const endpoint = patient ? "/api/v1/patient/updatePatientProfile" : "/api/v1/patient/createProfile";
+      
       const res = await axios.post(
-        "/api/v1/patient/createProfile",
-        {
-          ...values,
-          userId: user._id,
-          dob: moment(values.dob).format("YYYY-MM-DD"),
-          address: {
-            street: values.street,
-            city: values.city,
-            state: values.state,
-            zip: values.zip
-          }
-        },
+        endpoint,
+        formattedValues,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -61,9 +147,11 @@ const PatientProfile = () => {
           },
         }
       );
+      
       dispatch(hideLoading());
+      
       if (res.data.success) {
-        message.success("Profile completed successfully!");
+        message.success(patient ? "Profile updated successfully!" : "Profile completed successfully!");
         navigate("/");
       } else {
         message.error(res.data.message);
@@ -71,11 +159,11 @@ const PatientProfile = () => {
     } catch (error) {
       dispatch(hideLoading());
       console.error("Submission error:", error);
-      message.error("Failed to save profile");
+      message.error(error.response?.data?.message || "Failed to save profile");
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <Layout>
         <div className="text-center mt-8">
@@ -85,21 +173,22 @@ const PatientProfile = () => {
     );
   }
 
-  // Get initial name parts from user's name
+  // Get initial name parts from user's name if no patient data yet
   const nameParts = user.name ? user.name.split(' ') : ['', ''];
 
   return (
     <Layout>
       <div className="profile-container">
         <div className="form-header">
-          <h1 className="form-main-title">Complete Your Medical Profile</h1>
-          <p className="form-subtitle">Please provide the following details to continue</p>
+          <h1 className="form-main-title">{patient ? "Update Your Medical Profile" : "Complete Your Medical Profile"}</h1>
+          <p className="form-subtitle">{patient ? "Update your medical information below" : "Please provide the following details to continue"}</p>
         </div>
         
         <Form
           layout="vertical"
           onFinish={handleFinish}
           className="patient-form"
+          form={form}
           initialValues={{
             firstName: nameParts[0],
             lastName: nameParts.slice(1).join(' '),
@@ -143,9 +232,15 @@ const PatientProfile = () => {
                   rules={[{ required: true, message: "Please select your date of birth" }]}
                 >
                   <DatePicker
-                    className="form-input"
+                    className="form-input custom-picker-wrapper"
                     format="YYYY-MM-DD"
-                    suffixIcon={<CalendarOutlined />}
+                    suffixIcon={<CalendarOutlined style={{ color: '#000000' }} />}
+                    placeholder="Select date of birth"
+                    showToday={false}
+                    disabledDate={(current) => {
+                      // Can't select dates after today and not before 1900
+                      return current && (current > new Date() || current < new Date('1900-01-01'));
+                    }}
                   />
                 </Form.Item>
               </Col>
@@ -153,12 +248,10 @@ const PatientProfile = () => {
                 <Form.Item
                   label="Phone Number"
                   name="phone"
-                  rules={[{ 
-                    required: true, 
-                    message: "Please enter your phone number",
-                    pattern: new RegExp(/^[0-9]{10}$/),
-                    message: "Please enter a valid 10-digit phone number"
-                  }]}
+                  rules={[
+                    { required: true, message: "Please enter your phone number" },
+                    { pattern: new RegExp(/^[0-9]{10}$/), message: "Please enter a valid 10-digit phone number" }
+                  ]}
                 >
                   <Input 
                     prefix={<PhoneOutlined className="form-input-icon" />}
@@ -344,12 +437,10 @@ const PatientProfile = () => {
                 <Form.Item
                   label="Phone Number"
                   name={["emergencyContact", "phone"]}
-                  rules={[{ 
-                    required: true, 
-                    message: "Please enter emergency phone number",
-                    pattern: new RegExp(/^[0-9]{10}$/),
-                    message: "Please enter a valid 10-digit phone number"
-                  }]}
+                  rules={[
+                    { required: true, message: "Please enter emergency phone number" },
+                    { pattern: new RegExp(/^[0-9]{10}$/), message: "Please enter a valid 10-digit phone number" }
+                  ]}
                 >
                   <Input 
                     prefix={<PhoneOutlined className="form-input-icon" />}

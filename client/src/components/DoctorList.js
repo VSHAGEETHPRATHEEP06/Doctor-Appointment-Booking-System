@@ -5,11 +5,42 @@ import {
   FaUserMd, 
   FaBriefcase, 
   FaMoneyBillAlt, 
-  FaClock 
+  FaClock,
+  FaGraduationCap,
+  FaStar 
 } from "react-icons/fa";
+import moment from "moment";
+import RatingStars from "./RatingStars";
 
 const DoctorList = ({ doctor }) => {
   const navigate = useNavigate();
+
+  // Helper function to format doctor timing consistently
+  const formatDoctorTiming = (timings) => {
+    try {
+      // Handle different timing formats
+      let startTime, endTime;
+      
+      if (Array.isArray(timings) && timings.length >= 2) {
+        startTime = timings[0];
+        endTime = timings[1];
+      } else if (typeof timings === 'object') {
+        startTime = timings.start || timings[0] || "09:00";
+        endTime = timings.end || timings[1] || "17:00";
+      } else {
+        return "09:00 AM - 05:00 PM"; // Default fallback
+      }
+      
+      // Format the times for display
+      const formattedStart = moment(startTime, ["HH:mm", "h:mm A"]).format("hh:mm A");
+      const formattedEnd = moment(endTime, ["HH:mm", "h:mm A"]).format("hh:mm A");
+      
+      return `${formattedStart} - ${formattedEnd}`;
+    } catch (error) {
+      console.error("Error formatting doctor timing:", error);
+      return "09:00 AM - 05:00 PM"; // Default fallback on error
+    }
+  };
 
   if (!doctor) {
     return <div className="text-center p-4">Loading doctor information...</div>;
@@ -17,16 +48,32 @@ const DoctorList = ({ doctor }) => {
 
   return (
     <div
-      className="doctor-card doctor-card-large"
+      className="doctor-card"
       onClick={() => navigate(`/doctor/book-appointment/${doctor._id}`)}
     >
       <div className="card-header">
-        <div className="header-icon">
-          <FaUserMd />
+        <div className="doctor-avatar">
+          <div className="avatar-placeholder">
+            <FaUserMd className="avatar-icon" />
+          </div>
         </div>
-        <h3 className="doctor-name" style={{ color: "white" }}>
-          Dr. {doctor.firstName || ""} {doctor.lastName || ""}
-        </h3>
+        <div className="doctor-info">
+          <h3 className="doctor-card-name">
+            Dr. {doctor.firstName || ""} {doctor.lastName || ""}
+          </h3>
+          <div className="specialization-badge">
+            {doctor.specialization || "General Medicine"}
+          </div>
+          <div className="star-container">
+            <RatingStars 
+              initialRating={doctor.averageRating || 0} 
+              size="small" 
+              totalRatings={doctor.totalRatings || 0}
+              editable={false}
+              showRatingValue={true}
+            />
+          </div>
+        </div>
       </div>
       
       <div className="card-body">
@@ -45,7 +92,7 @@ const DoctorList = ({ doctor }) => {
 
           <div className="detail-item">
             <div className="icon-wrapper experience-icon">
-              <FaBriefcase className="icon" />
+              <FaGraduationCap className="icon" />
             </div>
             <div className="text-wrapper">
               <p className="detail-label">Experience</p>
@@ -74,10 +121,16 @@ const DoctorList = ({ doctor }) => {
             <div className="text-wrapper">
               <p className="detail-label">Availability</p>
               <p className="detail-content">
-                {doctor.timings?.[0] || "09:00 AM"} - {doctor.timings?.[1] || "05:00 PM"}
+                {formatDoctorTiming(doctor.timings)}
               </p>
             </div>
           </div>
+        </div>
+        
+        <div className="card-footer">
+          <button className="book-button">
+            Book Appointment
+          </button>
         </div>
       </div>
     </div>

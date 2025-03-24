@@ -104,6 +104,7 @@ const Register = () => {
               />
             </Form.Item>
 
+
             <Form.Item>
               <button className="medical-auth-btn" type="submit">
                 Register Clinic

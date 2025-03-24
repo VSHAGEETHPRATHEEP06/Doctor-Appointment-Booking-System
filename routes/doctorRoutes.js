@@ -5,6 +5,8 @@ const {
   getDoctorByIdController,
   doctorAppointmentsController,
   updateStatusController,
+  updateAppointmentController,
+  deleteAppointmentController,
 } = require("../controllers/doctorCtrl");
 const authMiddleware = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -12,6 +14,7 @@ const router = express.Router();
 //POST SINGLE DOC INFO
 router.post("/getDoctorInfo", authMiddleware, getDoctorInfoController);
 
+//GET SINGLE DOC INFO
 router.get("/getDoctorInfo", authMiddleware, getDoctorInfoController);
 
 //POST UPDATE PROFILE
@@ -30,27 +33,10 @@ router.get(
 //POST Update Status
 router.post("/update-status", authMiddleware, updateStatusController);
 
-exports.getDoctorInfoController = async (req, res) => {
-  try {
-    const doctor = await doctorModel.findOne({ userId: req.userId });
-    if (!doctor) {
-      return res.status(404).send({
-        success: false,
-        message: "Doctor information not found",
-      });
-    }
-    res.status(200).send({
-      success: true,
-      data: doctor,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({
-      success: false,
-      message: "Error fetching doctor information",
-      error,
-    });
-  }
-};
+//PUT Update Appointment
+router.put("/update-appointment/:id", authMiddleware, updateAppointmentController);
+
+//DELETE Appointment
+router.delete("/delete-appointment/:id", authMiddleware, deleteAppointmentController);
 
 module.exports = router;

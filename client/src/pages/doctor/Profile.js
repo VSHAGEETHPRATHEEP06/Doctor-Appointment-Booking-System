@@ -19,6 +19,7 @@ import {
   CalendarOutlined
 } from '@ant-design/icons';
 import "../../styles/Profile.css";
+import "../../styles/CustomDatePicker.css";
 
 const Profile = () => {
   const { user } = useSelector((state) => state.user);
@@ -346,8 +347,8 @@ const Profile = () => {
                     value={timeRange}
                     onChange={handleTimeChange}
                     format="HH:mm"
-                    className="time-picker"
-                    suffixIcon={<ScheduleOutlined />}
+                    className="time-picker custom-picker-wrapper"
+                    suffixIcon={<ScheduleOutlined style={{ color: '#000000' }} />}
                     minuteStep={15}
                     showNow={false}
                     disabledTime={(current, type) => ({

@@ -12,32 +12,39 @@ import {
   HeartOutlined
 } from '@ant-design/icons';
 import "../styles/HomePage.css";
+import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const [doctors, setDoctors] = useState([]);
+  const [showLoader, setShowLoader] = useState(true);
+  const navigate = useNavigate();
 
-  const getUserData = async () => {
-    try {
-      const res = await axios.get("/api/v1/user/getAllDoctors", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
-        },
-      });
-      if (res.data.success) {
-        setDoctors(res.data.data);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
+  // Fetch doctors on component mount
   useEffect(() => {
-    getUserData();
+    const getDoctors = async () => {
+      try {
+        setShowLoader(true);
+        const res = await axios.get("/api/v1/user/getAllDoctors", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        if (res.data.success) {
+          setDoctors(res.data.data);
+        }
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setShowLoader(false);
+      }
+    };
+
+    getDoctors();
   }, []);
 
   return (
     <Layout>
-      <div className="home-container">
+      <div className="home-container" style={{ width: '100%', overflowX: 'hidden' }}>
         <div className="medical-hero">
           <div className="hero-content">
             <div className="logo-wrapper">
@@ -83,7 +90,7 @@ const HomePage = () => {
         <div className="specialists-section">
           <div className="section-header">
             <h2 className="section-title">
-              <UserOutlined className="section-icon" />
+              <MedicineBoxOutlined className="section-icon" />
               Meet Our Specialists
             </h2>
             <p className="section-subtitle">
@@ -92,11 +99,17 @@ const HomePage = () => {
           </div>
           
           <div className="doctors-container">
-            {doctors.map((doctor) => (
-              <div className="doctor-wrapper" key={doctor._id}>
-                <DoctorList doctor={doctor} />
+            {doctors && doctors.length > 0 ? (
+              doctors.map((doctor) => (
+                <div className="doctor-wrapper" key={doctor._id}>
+                  <DoctorList doctor={doctor} />
+                </div>
+              ))
+            ) : (
+              <div className="no-doctors-message">
+                <p>No doctors available at the moment. Please check back later.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>

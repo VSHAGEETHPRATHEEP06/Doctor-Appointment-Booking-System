@@ -1,9 +1,10 @@
 .notification-card {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 20px auto;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border: 1px solid #d9d9d9;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    overflow: hidden;
 }
 
 .page-title {
@@ -26,17 +27,21 @@
 
 .notification-item {
     padding: 16px;
-    margin: 8px 0;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    margin: 12px 0;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid #f0f0f0;
     background-color: #fff;
 }
 
+.notification-content {
+    cursor: pointer;
+    flex: 1;
+}
+
 .notification-item.unread {
-    border-left: 4px solid #000;
-    background-color: #fafafa;
+    border-left: 4px solid #000000;
+    background-color: rgba(0, 0, 0, 0.03);
 }
 
 .notification-item.read {
@@ -45,13 +50,20 @@
 }
 
 .notification-item:hover {
-    background-color: #f5f5f5;
-    transform: translateX(2px);
+    background-color: #f9fafb;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .notification-icon {
     font-size: 18px;
-    color: #000;
+    color: #000000;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .notification-message {
@@ -59,9 +71,21 @@
     color: #000;
 }
 
-.notification-time {
-    font-size: 12px;
-    color: #666;
+.notification-meta {
+    display: flex;
+    flex-direction: column;
+    margin-top: 8px;
+    gap: 4px;
+}
+
+.notification-time,
+.notification-date {
+    font-size: 14px;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
 }
 
 .tab-label {
@@ -73,37 +97,168 @@
 }
 
 .notification-count-tag {
-    background-color: #000;
+    background-color: #000000;
     color: white;
     margin-left: 8px;
     border-radius: 10px;
+    font-size: 11px;
+    padding: 0 8px;
+    height: 20px;
+    line-height: 20px;
 }
 
 .mark-all-read-btn {
-    background-color: #000;
+    background-color: #000000;
     color: #fff;
-    border: 1px solid #000;
+    border: 1px solid #000000;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 16px;
 }
 
 .mark-all-read-btn:hover {
-    background-color: #333 !important;
+    background-color: #333333 !important;
     color: #fff !important;
-    border-color: #333 !important;
+    border-color: #333333 !important;
 }
 
 .clear-all-btn {
-    color: #000;
-    border: 1px solid #000;
+    color: #000000;
+    border: 1px solid #000000;
+    border-radius: 6px;
+    margin-top: 16px;
 }
 
 .clear-all-btn:hover {
-    background-color: #f5f5f5 !important;
-    color: #000 !important;
-    border-color: #666 !important;
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: #333333 !important;
+    border-color: #333333 !important;
 }
 
 .ant-tabs-tab-active .tab-label {
     color: #000 !important;
+}
+
+/* Notification modal styling */
+.notification-modal-title {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #000000;
+}
+
+.notification-detail {
+    padding: 16px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.notification-detail-message {
+    font-size: 16px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+    color: #000000;
+    padding: 12px;
+    background-color: white;
+    border-radius: 6px;
+    border-left: 4px solid #000000;
+}
+
+.notification-detail-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14px;
+    margin-top: 16px;
+    padding: 16px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+}
+
+.notification-detail-meta .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notification-detail-meta .meta-icon {
+    font-size: 16px;
+    color: #000000;
+}
+
+.notification-detail-meta .meta-label {
+    font-weight: 600;
+    color: #333;
+    min-width: 80px;
+}
+
+.notification-detail-meta .meta-value {
+    color: #555;
+}
+
+.status-badge .status-read {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.status-badge .status-unread {
+    background-color: #000;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Date & Time Picker Styles in BookingPage */
+.custom-date-picker-dropdown .date-picker-footer,
+.custom-time-picker-dropdown .time-picker-footer {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #4a5568;
+    background-color: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.notification-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.notification-modal-footer .cancel-btn {
+    color: #000000;
+    border: 1px solid #000000;
+    border-radius: 6px;
+}
+
+.notification-modal-footer .action-btn {
+    background-color: #000000;
+    border-color: #000000;
+    color: white;
+    border-radius: 6px;
+}
+
+.notification-modal-footer .action-btn:hover {
+    background-color: #333333;
+    border-color: #333333;
+}
+
+.selected-time-info {
+    margin-top: 20px;
+    padding: 16px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    border-left: 4px solid #000000;
+}
+
+.selected-time-info p {
+    margin: 5px 0;
+    font-size: 14px;
 }
 
 .ant-tabs-ink-bar {

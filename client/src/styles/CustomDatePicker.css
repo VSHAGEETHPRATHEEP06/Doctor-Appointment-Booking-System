@@ -1,0 +1,117 @@
+/* Black and white theme for DatePicker and TimePicker */
+.custom-picker-wrapper {
+  width: 100%;
+}
+
+.ant-picker {
+  border-color: #000000 !important;
+  border-radius: 6px !important;
+  height: 40px !important;
+  width: 100% !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-picker:hover, .ant-picker:focus, .ant-picker-focused {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ant-picker-suffix, .ant-picker-clear {
+  color: #000000 !important;
+}
+
+/* Calendar panel */
+.ant-picker-panel {
+  border-radius: 8px !important;
+  border: 1px solid #000000 !important;
+  overflow: hidden !important;
+}
+
+.ant-picker-header {
+  border-bottom: 1px solid #000000 !important;
+  color: #000000 !important;
+}
+
+.ant-picker-header button {
+  color: #000000 !important;
+}
+
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before {
+  border: 1px solid #000000 !important;
+}
+
+.ant-picker-time-panel-column > li.ant-picker-time-panel-cell-selected .ant-picker-time-panel-cell-inner {
+  background-color: #f0f0f0 !important;
+  color: #000000 !important;
+}
+
+.ant-picker-footer, .ant-picker-header {
+  color: #000000 !important;
+}
+
+.ant-picker-ok button {
+  background-color: #000000 !important;
+  border-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.ant-picker-ok button:hover {
+  background-color: #333333 !important;
+  border-color: #333333 !important;
+}
+
+/* TimePicker additions */
+.ant-picker-time-panel-column > li.ant-picker-time-panel-cell:hover .ant-picker-time-panel-cell-inner {
+  background-color: #f0f0f0 !important;
+  color: #000000 !important;
+}
+
+/* Current year and month text */
+.ant-picker-header-view {
+  color: #000000 !important;
+  font-weight: 600 !important;
+}
+
+/* Year / Month selection panel */
+.ant-picker-cell-in-view {
+  color: #000000 !important;
+}
+
+.ant-picker-cell:hover:not(.ant-picker-cell-selected):not(.ant-picker-cell-disabled) .ant-picker-cell-inner {
+  background-color: #f0f0f0 !important;
+  color: #000000 !important;
+}
+
+/* Disable border color on range picker */
+.ant-picker-range {
+  border-color: #000000 !important;
+}
+
+.ant-picker-range .ant-picker-active-bar {
+  background-color: #000000 !important;
+}
+
+/* Calendar header */
+.ant-picker-header-super-prev-btn,
+.ant-picker-header-prev-btn,
+.ant-picker-header-next-btn,
+.ant-picker-header-super-next-btn {
+  color: #000000 !important;
+  font-size: 14px !important;
+}
+
+/* Today button */
+.ant-picker-today-btn {
+  color: #000000 !important;
+}
+
+.ant-picker-today-btn:hover {
+  color: #333333 !important;
+}

@@ -1,34 +1,94 @@
 import "../styles/LoginStyles.css"
-import React from "react";
+import React, { useState } from "react";
 import "../styles/RegisterStyles.css";
-import { Form, Input, message } from "antd";
+import { Form, Input, message, Modal, Button } from "antd";
 import { useDispatch } from "react-redux";
 import { showLoading, hideLoading } from "../redux/features/alertSlice";
+import { setUser } from "../redux/features/userSlice";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../src/config/axiosConfig";
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [isBlockedModalVisible, setIsBlockedModalVisible] = useState(false);
+  const [blockedUserEmail, setBlockedUserEmail] = useState("");
+  const [requestForm] = Form.useForm();
 
   const onfinishHandler = async (values) => {
     try {
       dispatch(showLoading());
       const res = await axios.post("/api/v1/user/login", values);
-      window.location.reload();
-      dispatch(hideLoading());
+      
       if (res.data.success) {
+        // Store the token in localStorage
         localStorage.setItem("token", res.data.token);
-        message.success("Login Successful");
-        navigate("/");
+        
+        // Immediately fetch user data to update Redux store with correct role
+        try {
+          const userData = await axios.post(
+            "/api/v1/user/getUserData",
+            { token: res.data.token },
+            {
+              headers: {
+                Authorization: `Bearer ${res.data.token}`,
+              },
+            }
+          );
+          
+          if (userData.data.success) {
+            // Set user data in Redux store (this will also update lastFetchTimestamp)
+            dispatch(setUser(userData.data.data));
+            message.success("Login Successful");
+            navigate("/");
+          } else {
+            message.error("Could not retrieve user data");
+          }
+        } catch (userDataError) {
+          console.error("Error fetching user data:", userDataError);
+          message.error("Login successful but could not load your profile");
+          navigate("/");
+        }
+      } else {
+        // Check if user is blocked
+        if (res.data.isBlocked) {
+          setBlockedUserEmail(values.email);
+          setIsBlockedModalVisible(true);
+        } else {
+          message.error(res.data.message);
+        }
+      }
+      dispatch(hideLoading());
+    } catch (error) {
+      dispatch(hideLoading());
+      console.log(error);
+      message.error("Authentication Failed");
+    }
+  };
+  
+  const handleRequestAccess = async () => {
+    try {
+      const values = await requestForm.validateFields();
+      dispatch(showLoading());
+      
+      const res = await axios.post("/api/v1/user/request-access", {
+        email: blockedUserEmail,
+        message: values.requestMessage
+      });
+      
+      dispatch(hideLoading());
+      
+      if (res.data.success) {
+        message.success(res.data.message);
+        setIsBlockedModalVisible(false);
       } else {
         message.error(res.data.message);
       }
     } catch (error) {
       dispatch(hideLoading());
-      console.log(error);
-      message.error("Authentication Failed");
+      console.error("Request access error:", error);
+      message.error("Failed to send access request");
     }
   };
 
@@ -53,6 +113,35 @@ const Login = () => {
           </div>
         </div>
       </div>
+      
+      {/* Blocked User Modal */}
+      <Modal
+        title="Account Blocked"
+        open={isBlockedModalVisible}
+        onCancel={() => setIsBlockedModalVisible(false)}
+        footer={null}
+      >
+        <div style={{ marginBottom: '20px' }}>
+          <p>Your account has been blocked by an administrator. Please provide a reason to request access:</p>
+        </div>
+        
+        <Form form={requestForm} layout="vertical">
+          <Form.Item
+            name="requestMessage"
+            rules={[{ required: true, message: 'Please provide a reason for your request' }]}
+          >
+            <Input.TextArea 
+              rows={4} 
+              placeholder="Explain why you need access to your account..."
+            />
+          </Form.Item>
+          
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <Button onClick={() => setIsBlockedModalVisible(false)}>Cancel</Button>
+            <Button type="primary" onClick={handleRequestAccess}>Submit Request</Button>
+          </div>
+        </Form>
+      </Modal>
 
       {/* Right Panel - Login Form */}
       <div className="medical-auth-panel">

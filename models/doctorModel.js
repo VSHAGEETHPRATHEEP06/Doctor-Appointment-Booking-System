@@ -50,6 +50,16 @@ const doctorSchema = new mongoose.Schema(
       type: Object,
       required: [true, "work timing is required"],
     },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5
+    },
+    totalRatings: {
+      type: Number,
+      default: 0
+    }
   },
   { timestamps: true }
 );

@@ -10,6 +10,9 @@ const {
   bookAppointmentController,
   bookingAvailabilityController,
   userAppointmentsController,
+  updateAppointmentController,
+  deleteAppointmentController,
+  requestAccessController,
 } = require("../controllers/userCtrl");
 const authMiddleware = require("../middlewares/authMiddleware");
 
@@ -57,5 +60,14 @@ router.post(
 
 //Appointments List
 router.get("/user-appointments", authMiddleware, userAppointmentsController);
+
+//Update Appointment
+router.put("/update-appointment/:appointmentId", authMiddleware, updateAppointmentController);
+
+//Delete Appointment
+router.delete("/delete-appointment/:appointmentId", authMiddleware, deleteAppointmentController);
+
+//Request Access for Blocked Users
+router.post("/request-access", requestAccessController);
 
 module.exports = router;

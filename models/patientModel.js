@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const patientSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "users", // Updated to match the collection name in MongoDB
     required: true,
     unique: true
   },

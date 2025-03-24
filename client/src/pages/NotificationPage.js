@@ -1,23 +1,88 @@
 import "../styles/Notification.css"
-import React from "react";
+import React, { useState } from "react";
 import Layout from "./../components/Layout";
-import { message, Tabs, List, Button, Tag, Card } from "antd";
+import { message, Tabs, List, Button, Tag, Card, Modal, Tooltip } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { showLoading, hideLoading } from "../redux/features/alertSlice";
 import { useNavigate } from "react-router-dom";
 import "../styles/Notification.css";
 import axios from "axios";
+import moment from "moment";
 import { 
   BellOutlined, 
   CheckCircleOutlined, 
   DeleteOutlined, 
-  CheckOutlined 
+  CheckOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
 
 const NotificationPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
+  const [previewNotification, setPreviewNotification] = useState(null);
+  const [previewModalVisible, setPreviewModalVisible] = useState(false);
+
+  // Helper to determine where to navigate based on notification type
+  const getNavigationPath = (notification) => {
+    // Default path if none is specified
+    if (!notification) return "/";
+    
+    // If the notification has a specific path, use it
+    if (notification.onClickPath) return notification.onClickPath;
+    
+    // Otherwise try to determine from the message content
+    const message = notification.message.toLowerCase();
+    
+    if (message.includes("appointment") && message.includes("approved")) {
+      return "/appointments";
+    } else if (message.includes("appointment") && message.includes("booked")) {
+      return "/appointments";
+    } else if (message.includes("profile")) {
+      return "/profile";
+    } else if (message.includes("doctor") && message.includes("applied")) {
+      return "/admin/doctors";
+    } else {
+      // Default fallback
+      return "/";
+    }
+  };
+  
+  // Preview notification details
+  const showNotificationPreview = (notification) => {
+    setPreviewNotification(notification);
+    setPreviewModalVisible(true);
+  };
+  
+  // Close preview modal
+  const handleClosePreview = () => {
+    setPreviewModalVisible(false);
+  };
+  
+  // Navigate to relevant page
+  const handleNotificationClick = (notification) => {
+    const path = getNavigationPath(notification);
+    navigate(path);
+  };
+
+  // Format timestamp
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "";
+    
+    const notificationTime = moment(timestamp);
+    const now = moment();
+    
+    if (now.diff(notificationTime, 'days') < 1) {
+      return notificationTime.fromNow(); // e.g. "2 hours ago"
+    } else if (now.diff(notificationTime, 'days') < 7) {
+      return notificationTime.format('dddd [at] h:mm A'); // e.g. "Monday at 2:30 PM"
+    } else {
+      return notificationTime.format('MMM D, YYYY [at] h:mm A'); // e.g. "Jan 5, 2023 at 2:30 PM"
+    }
+  };
 
   // Handle marking all notifications as read
   const handleMarkAllRead = async () => {
@@ -119,21 +184,40 @@ const NotificationPage = () => {
             renderItem={(notification) => (
               <List.Item
                 className="notification-item unread"
-                onClick={() => navigate(notification.onClickPath)}
+                actions={[
+                  <Button 
+                    type="text" 
+                    icon={<InfoCircleOutlined />} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showNotificationPreview(notification);
+                    }}
+                  />
+                ]}
               >
-                <List.Item.Meta
-                  avatar={<BellOutlined className="notification-icon" />}
-                  title={
-                    <span className="notification-message">
-                      {notification.message}
-                    </span>
-                  }
-                  description={
-                    <span className="notification-time">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </span>
-                  }
-                />
+                <div 
+                  className="notification-content" 
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <List.Item.Meta
+                    avatar={<BellOutlined className="notification-icon" />}
+                    title={
+                      <span className="notification-message">
+                        {notification.message}
+                      </span>
+                    }
+                    description={
+                      <div className="notification-meta">
+                        <span className="notification-time">
+                          <ClockCircleOutlined /> {formatTimestamp(notification.createdAt)}
+                        </span>
+                        <span className="notification-date">
+                          <CalendarOutlined /> {moment(notification.createdAt).format('MMM DD, YYYY')} {moment(notification.createdAt).format('hh:mm A')}
+                        </span>
+                      </div>
+                    }
+                  />
+                </div>
               </List.Item>
             )}
           />
@@ -165,21 +249,40 @@ const NotificationPage = () => {
             renderItem={(notification) => (
               <List.Item
                 className="notification-item read"
-                onClick={() => navigate(notification.onClickPath)}
+                actions={[
+                  <Button 
+                    type="text" 
+                    icon={<InfoCircleOutlined />} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showNotificationPreview(notification);
+                    }}
+                  />
+                ]}
               >
-                <List.Item.Meta
-                  avatar={<CheckCircleOutlined className="notification-icon" />}
-                  title={
-                    <span className="notification-message">
-                      {notification.message}
-                    </span>
-                  }
-                  description={
-                    <span className="notification-time">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </span>
-                  }
-                />
+                <div 
+                  className="notification-content" 
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <List.Item.Meta
+                    avatar={<CheckCircleOutlined className="notification-icon" />}
+                    title={
+                      <span className="notification-message">
+                        {notification.message}
+                      </span>
+                    }
+                    description={
+                      <div className="notification-meta">
+                        <span className="notification-time">
+                          <ClockCircleOutlined /> {formatTimestamp(notification.createdAt)}
+                        </span>
+                        <span className="notification-date">
+                          <CalendarOutlined /> {moment(notification.createdAt).format('MMM DD, YYYY')} {moment(notification.createdAt).format('hh:mm A')}
+                        </span>
+                      </div>
+                    }
+                  />
+                </div>
               </List.Item>
             )}
           />
@@ -201,6 +304,64 @@ const NotificationPage = () => {
           className="notification-tabs"
         />
       </Card>
+      
+      {/* Notification Preview Modal */}
+      <Modal
+        title={
+          <div className="notification-modal-title">
+            <BellOutlined style={{ marginRight: '8px' }} />
+            Notification Details
+          </div>
+        }
+        open={previewModalVisible}
+        onCancel={handleClosePreview}
+        footer={
+          <div className="notification-modal-footer">
+            <Button key="close" onClick={handleClosePreview} className="cancel-btn">
+              Close
+            </Button>
+            <Button 
+              key="navigate" 
+              type="primary" 
+              onClick={() => {
+                handleClosePreview();
+                handleNotificationClick(previewNotification);
+              }}
+              className="action-btn"
+            >
+              Go to Related Page
+            </Button>
+          </div>
+        }
+        width={500}
+        centered
+      >
+        {previewNotification && (
+          <div className="notification-detail">
+            <div className="notification-detail-message">
+              {previewNotification.message}
+            </div>
+            
+            <div className="notification-detail-meta">
+              <div className="meta-item">
+                <ClockCircleOutlined className="meta-icon" /> 
+                <span className="meta-label">Received:</span>
+                <span className="meta-value">{moment(previewNotification.createdAt).format('MMMM Do YYYY, h:mm A')}</span>
+              </div>
+              <div className="meta-item">
+                <CalendarOutlined className="meta-icon" /> 
+                <span className="meta-label">Status:</span>
+                <span className="meta-value status-badge">
+                  {user?.seen_notification?.some(n => n._id === previewNotification._id) ? 
+                    <span className="status-read">Read</span> : 
+                    <span className="status-unread">Unread</span>
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </Layout>
   );
 };

@@ -7,7 +7,8 @@ import { showLoading, hideLoading } from "../redux/features/alertSlice";
 import axios from "axios";
 import moment from "moment";
 import { UserOutlined, PhoneOutlined, MailOutlined, GlobalOutlined, MedicineBoxOutlined, ScheduleOutlined, WalletOutlined } from '@ant-design/icons';
-import "../styles/ApplyDoctor.css"
+import "../styles/ApplyDoctor.css";
+import "../styles/CustomDatePicker.css";
 
 const ApplyDoctor = () => {
   const { user } = useSelector((state) => state.user);
@@ -187,8 +188,12 @@ const ApplyDoctor = () => {
                 >
                   <TimePicker.RangePicker 
                     format="HH:mm"
-                    className="time-picker"
-                    suffixIcon={<ScheduleOutlined />}
+                    className="time-picker custom-picker-wrapper"
+                    suffixIcon={<ScheduleOutlined style={{ color: '#000000' }} />}
+                    placeholder={['Start Time', 'End Time']}
+                    style={{ borderColor: '#000000' }}
+                    popupStyle={{ borderRadius: '6px' }}
+                    minuteStep={15}
                   />
                 </Form.Item>
               </Col>

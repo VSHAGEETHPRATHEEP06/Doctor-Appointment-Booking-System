@@ -90,8 +90,8 @@ const Layout = ({ children }) => {
             placement="left"
             closable={false}
             onClose={toggleSidebar}
-            visible={sidebarVisible}
-            bodyStyle={{ padding: 0, background: '#000' }}
+            open={sidebarVisible}
+            styles={{ body: { padding: 0, background: '#000' } }}
             width="280px"
           >
             <div className="sidebar-mobile">

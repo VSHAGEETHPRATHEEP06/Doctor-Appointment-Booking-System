@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const doctorModel = require("../models/doctorModel");
 const userModel = require("../models/userModels");
+const Admin = require("../models/adminModel");
 
 const getAllUsersController = async (req, res) => {
   try {
@@ -131,17 +132,58 @@ const deleteDoctorController = async (req, res) => {
   }
 };
 
-exports.getAdminInfo = async (req, res) => {
+const getAdminInfo = async (req, res) => {
   try {
-    const admin = await Admin.findOne({ user: req.body.userId })
-      .populate('user', 'name email')
-      .select('-createdAt -updatedAt -__v');
-
-    if (!admin) {
+    console.log('getAdminInfo called with userId:', req.body.userId);
+    
+    // First check if the user exists and is an admin
+    const user = await userModel.findById(req.body.userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Admin profile not found"
+        message: "User not found"
       });
+    }
+    
+    // Verify that the user is an admin
+    if (!user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only admins can access this resource"
+      });
+    }
+    
+    // Check if admin profile exists
+    const admin = await Admin.findOne({ user: req.body.userId });
+    
+    if (!admin) {
+      // Create a new admin profile if it doesn't exist
+      try {
+        const newAdmin = new Admin({
+          user: req.body.userId,
+          adminId: `ADMIN-${Date.now()}`,
+          phone: "",  // Empty string should now be valid with our model changes
+          officeAddress: "",
+          emergencyContact: "", // Empty string should now be valid with our model changes
+          department: "Administration"
+        });
+        
+        await newAdmin.save();
+        console.log("Created new admin profile successfully");
+        
+        return res.status(201).json({
+          success: true,
+          data: newAdmin,
+          message: "New admin profile created"
+        });
+      } catch (createError) {
+        console.error("Error creating admin profile:", createError);
+        return res.status(500).json({
+          success: false,
+          message: "Error creating admin profile",
+          error: createError.message
+        });
+      }
     }
 
     res.status(200).json({
@@ -152,36 +194,152 @@ exports.getAdminInfo = async (req, res) => {
     console.error("Get admin error:", error);
     res.status(500).json({
       success: false,
-      message: "Error fetching admin information"
+      message: "Error fetching admin information",
+      error: error.message
     });
   }
 };
 
-exports.updateAdminProfile = async (req, res) => {
+const updateAdminProfile = async (req, res) => {
   try {
-    const updatedAdmin = await Admin.findOneAndUpdate(
-      { user: req.body.userId },
-      req.body,
-      { new: true, runValidators: true }
-    ).populate('user', 'name email');
-
-    if (!updatedAdmin) {
+    console.log('updateAdminProfile called with:', req.body);
+    
+    // Check if user exists
+    const user = await userModel.findById(req.body.userId);
+    if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Admin profile not found"
+        message: "User not found"
       });
     }
-
+    
+    // Verify that the user is an admin
+    if (!user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: Only admins can access this resource"
+      });
+    }
+    
+    // Check if admin profile exists
+    let admin = await Admin.findOne({ user: req.body.userId });
+    
+    if (!admin) {
+      // Create new admin profile if it doesn't exist
+      try {
+        const adminData = {
+          user: req.body.userId,
+          phone: req.body.phone || "",
+          officeAddress: req.body.officeAddress || "",
+          emergencyContact: req.body.emergencyContact || "",
+          adminId: req.body.adminId || `ADMIN-${Date.now()}`, // Generate default adminId if not provided
+          department: req.body.department || "Administration"
+        };
+        
+        admin = new Admin(adminData);
+        await admin.save();
+        
+        // Update user name if provided
+        if (req.body.name && req.body.name !== user.name) {
+          user.name = req.body.name;
+          await user.save();
+        }
+        
+        return res.status(201).json({
+          success: true,
+          message: "Admin profile created successfully",
+          data: admin
+        });
+      } catch (createError) {
+        console.error("Error creating admin profile:", createError);
+        return res.status(500).json({
+          success: false,
+          message: "Error creating admin profile",
+          error: createError.message
+        });
+      }
+    }
+    
+    // Update existing admin profile
+    const fieldsToUpdate = ['phone', 'officeAddress', 'emergencyContact', 'adminId', 'department'];
+    fieldsToUpdate.forEach(field => {
+      if (req.body[field]) {
+        admin[field] = req.body[field];
+      }
+    });
+    
+    await admin.save();
+    
+    // Update user name if provided
+    if (req.body.name && req.body.name !== user.name) {
+      user.name = req.body.name;
+      await user.save();
+    }
+    
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      data: updatedAdmin
+      data: admin
     });
   } catch (error) {
     console.error("Update admin error:", error);
     res.status(500).json({
       success: false,
-      message: "Error updating admin profile"
+      message: "Error updating admin profile",
+      error: error.message
+    });
+  }
+};
+
+const toggleUserBlockStatus = async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    
+    // Find the user
+    const user = await userModel.findById(targetUserId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+    
+    // Prevent blocking admin users
+    if (user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Admin users cannot be blocked"
+      });
+    }
+    
+    // Toggle the block status
+    user.isBlocked = !user.isBlocked;
+    await user.save();
+    
+    // Create notification for the user
+    const notification = user.notification;
+    notification.push({
+      type: "account-status-updated",
+      message: user.isBlocked ? 
+        "Your account has been blocked by an administrator. Please contact support for assistance." : 
+        "Your account has been unblocked. You can now use all features of the application.",
+      onClickPath: "/notification"
+    });
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: user.isBlocked ? 
+        "User has been blocked successfully" : 
+        "User has been unblocked successfully",
+      data: user
+    });
+  } catch (error) {
+    console.error("Toggle block status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating user block status",
+      error: error.message
     });
   }
 };
@@ -191,4 +349,7 @@ module.exports = {
   getAllUsersController,
   changeAccountStatusController,
   deleteDoctorController,
+  getAdminInfo,
+  updateAdminProfile,
+  toggleUserBlockStatus
 };
