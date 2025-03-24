@@ -33,6 +33,32 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    modifiedBy: {
+      type: String,
+      enum: ['user', 'doctor', null],
+      default: null,
+    },
+    modificationHistory: [{
+      modifiedDate: {
+        type: Date,
+        default: Date.now,
+      },
+      modifiedBy: {
+        type: String,
+        enum: ['user', 'doctor'],
+        required: true,
+      },
+      previousDate: String,
+      previousTime: String,
+      previousStatus: String,
+      newDate: String,
+      newTime: String,
+      newStatus: String,
+    }],
+    lastModified: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

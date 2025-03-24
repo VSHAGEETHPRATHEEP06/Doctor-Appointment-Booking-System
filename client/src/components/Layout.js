@@ -4,8 +4,9 @@ import "../styles/LayoutStyles.css";
 import { adminMenu, userMenu } from "./../Data/data";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Badge, message, Drawer } from "antd";
-import { MenuOutlined, CloseOutlined } from "@ant-design/icons";
+import { Badge, message, Drawer, notification } from "antd";
+import { MenuOutlined, CloseOutlined, BellOutlined } from "@ant-design/icons";
+import AppointmentNotification from "./AppointmentNotification";
 
 const Layout = ({ children }) => {
   const { user } = useSelector((state) => state.user);
@@ -13,11 +14,65 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [api, contextHolder] = notification.useNotification();
 
   const handleLogout = () => {
     localStorage.clear();
     message.success("Logout Successfully");
     navigate("/login");
+  };
+
+  // Function to handle notification clicks and display enhanced notification details
+  const openNotification = (notificationItem) => {
+    const { message, data } = notificationItem;
+    
+    // Determine notification type based on the message content
+    let notificationType = 'info';
+    if (message.toLowerCase().includes('approved')) notificationType = 'success';
+    if (message.toLowerCase().includes('cancel') || message.toLowerCase().includes('reject')) notificationType = 'error';
+    if (message.toLowerCase().includes('update') || message.toLowerCase().includes('reschedul')) notificationType = 'warning';
+    
+    // Prepare appointment info from notification data
+    const appointmentInfo = data?.appointmentInfo ? {
+      doctorName: `${data.appointmentInfo.doctorName || 'Unknown'}`,
+      date: data.appointmentInfo.date,
+      time: data.appointmentInfo.time,
+      status: data.appointmentInfo.status,
+      modifiedBy: data.appointmentInfo.modifiedBy
+    } : null;
+    
+    // Prepare modification details if available
+    const modificationDetails = data?.modificationDetails ? {
+      previousDate: data.modificationDetails.previousDate,
+      previousTime: data.modificationDetails.previousTime,
+      previousStatus: data.modificationDetails.previousStatus,
+      newDate: data.modificationDetails.newDate,
+      newTime: data.modificationDetails.newTime,
+      newStatus: data.modificationDetails.newStatus
+    } : null;
+    
+    api.open({
+      message: notificationItem.message,
+      description: (
+        <AppointmentNotification 
+          notification={{
+            message: notificationItem.message,
+            appointmentInfo,
+            modificationDetails
+          }}
+          type={notificationType}
+        />
+      ),
+      placement: 'topRight',
+      duration: 5,
+      icon: <BellOutlined style={{ color: notificationType === 'success' ? '#52c41a' : 
+                                  notificationType === 'warning' ? '#faad14' : 
+                                  notificationType === 'error' ? '#f5222d' : '#1890ff' }} />,
+      style: {
+        borderRadius: '8px',
+        boxShadow: '0 3px 6px rgba(0,0,0,0.1)'
+      }
+    });
   };
 
   const doctorMenu = [
@@ -193,6 +248,7 @@ const Layout = ({ children }) => {
           <div className="body">{children}</div>
         </div>
       </div>
+      {contextHolder}
     </div>
   );
 };

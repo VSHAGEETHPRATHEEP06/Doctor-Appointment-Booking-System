@@ -1,7 +1,7 @@
 import "../styles/Notification.css"
 import React, { useState } from "react";
 import Layout from "./../components/Layout";
-import { message, Tabs, List, Button, Tag, Card, Modal, Tooltip } from "antd";
+import { message, Tabs, List, Button, Tag, Card, Modal, Tooltip, Space, Typography, Divider } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { showLoading, hideLoading } from "../redux/features/alertSlice";
 import { useNavigate } from "react-router-dom";
@@ -16,8 +16,12 @@ import {
   CalendarOutlined,
   ClockCircleOutlined,
   UserOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  HistoryOutlined
 } from "@ant-design/icons";
+import AppointmentNotification from "../components/AppointmentNotification";
+
+const { Text } = Typography;
 
 const NotificationPage = () => {
   const dispatch = useDispatch();
@@ -150,6 +154,49 @@ const NotificationPage = () => {
         message.error("Something went wrong. Please try again.");
       }
     }
+  };
+
+  // Prepare appointment data for notification component
+  const prepareAppointmentData = (notification) => {
+    if (!notification || !notification.data) return null;
+    
+    const { data } = notification;
+
+    // Extract appointment info if available
+    const appointmentInfo = data.appointmentInfo ? {
+      doctorName: data.appointmentInfo.doctorName || 'Unknown Doctor',
+      date: data.appointmentInfo.date,
+      time: data.appointmentInfo.time,
+      status: data.appointmentInfo.status,
+      modifiedBy: data.appointmentInfo.modifiedBy
+    } : null;
+    
+    // Extract modification details if available
+    const modificationDetails = data.modificationDetails ? {
+      previousDate: data.modificationDetails.previousDate,
+      previousTime: data.modificationDetails.previousTime,
+      previousStatus: data.modificationDetails.previousStatus,
+      newDate: data.modificationDetails.newDate,
+      newTime: data.modificationDetails.newTime,
+      newStatus: data.modificationDetails.newStatus
+    } : null;
+    
+    return {
+      message: notification.message,
+      appointmentInfo,
+      modificationDetails
+    };
+  };
+
+  // Determine notification type based on content
+  const getNotificationType = (message) => {
+    if (!message) return 'info';
+    
+    const msgLower = message.toLowerCase();
+    if (msgLower.includes('approved')) return 'success';
+    if (msgLower.includes('cancel') || msgLower.includes('reject')) return 'error';
+    if (msgLower.includes('update') || msgLower.includes('reschedul')) return 'warning';
+    return 'info';
   };
 
   // Tab items with black and white UI
@@ -293,72 +340,83 @@ const NotificationPage = () => {
 
   return (
     <Layout>
-      <Card className="notification-card">
-        <h3 className="page-title">
-          <BellOutlined /> Notifications
-        </h3>
-        <Tabs
-          defaultActiveKey="unread"
-          items={tabItems}
-          tabBarStyle={{ padding: '0 24px' }}
-          className="notification-tabs"
-        />
-      </Card>
+      <div className="notification-page">
+        <h4 className="notification-page-title">
+          <BellOutlined className="notification-title-icon" /> Notifications
+        </h4>
+        <div className="notification-main">
+          <Tabs 
+            items={tabItems} 
+            defaultActiveKey="unread"
+            className="notification-tabs"
+          />
+        </div>
+      </div>
       
-      {/* Notification Preview Modal */}
+      {/* Enhanced Notification Preview Modal */}
       <Modal
         title={
-          <div className="notification-modal-title">
-            <BellOutlined style={{ marginRight: '8px' }} />
-            Notification Details
+          <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #f0f0f0', paddingBottom: '10px' }}>
+            <BellOutlined style={{ fontSize: '20px', marginRight: '10px' }} />
+            <span style={{ fontSize: '16px', fontWeight: '600' }}>Notification Details</span>
           </div>
         }
         open={previewModalVisible}
         onCancel={handleClosePreview}
-        footer={
-          <div className="notification-modal-footer">
-            <Button key="close" onClick={handleClosePreview} className="cancel-btn">
-              Close
-            </Button>
-            <Button 
-              key="navigate" 
-              type="primary" 
-              onClick={() => {
-                handleClosePreview();
-                handleNotificationClick(previewNotification);
-              }}
-              className="action-btn"
-            >
-              Go to Related Page
-            </Button>
-          </div>
-        }
-        width={500}
+        footer={[
+          <Button key="close" type="primary" onClick={handleClosePreview}>
+            Close
+          </Button>
+        ]}
+        width={600}
+        destroyOnClose
         centered
       >
         {previewNotification && (
-          <div className="notification-detail">
-            <div className="notification-detail-message">
-              {previewNotification.message}
-            </div>
-            
-            <div className="notification-detail-meta">
-              <div className="meta-item">
-                <ClockCircleOutlined className="meta-icon" /> 
-                <span className="meta-label">Received:</span>
-                <span className="meta-value">{moment(previewNotification.createdAt).format('MMMM Do YYYY, h:mm A')}</span>
+          <div style={{ padding: '10px 0' }}>
+            <Space direction="vertical" style={{ width: '100%' }} size="large">
+              {/* Notification timestamp */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  {formatTimestamp(previewNotification.time)}
+                </Text>
               </div>
-              <div className="meta-item">
-                <CalendarOutlined className="meta-icon" /> 
-                <span className="meta-label">Status:</span>
-                <span className="meta-value status-badge">
-                  {user?.seen_notification?.some(n => n._id === previewNotification._id) ? 
-                    <span className="status-read">Read</span> : 
-                    <span className="status-unread">Unread</span>
-                  }
-                </span>
+              
+              {/* Use our enhanced AppointmentNotification component */}
+              <AppointmentNotification 
+                notification={prepareAppointmentData(previewNotification)}
+                type={getNotificationType(previewNotification.message)}
+              />
+              
+              {/* Show notification message */}
+              <div style={{ margin: '10px 0' }}>
+                <Text style={{ fontSize: '15px', lineHeight: '1.5' }}>
+                  {previewNotification.message}
+                </Text>
               </div>
-            </div>
+              
+              {/* Action buttons */}
+              <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
+                <Button 
+                  onClick={() => handleNotificationClick(previewNotification)}
+                  icon={<InfoCircleOutlined />}
+                >
+                  View Details
+                </Button>
+                
+                {previewNotification.data?.appointmentInfo?.status && (
+                  <Tag color={
+                    previewNotification.data.appointmentInfo.status.toLowerCase() === 'approved' ? 'green' :
+                    previewNotification.data.appointmentInfo.status.toLowerCase() === 'rejected' ? 'red' :
+                    previewNotification.data.appointmentInfo.status.toLowerCase() === 'pending' ? 'orange' :
+                    previewNotification.data.appointmentInfo.status.toLowerCase() === 'rescheduled' ? 'blue' :
+                    previewNotification.data.appointmentInfo.status.toLowerCase() === 'updated-by-doctor' ? 'purple' : 'default'
+                  }>
+                    {previewNotification.data.appointmentInfo.status.toUpperCase()}
+                  </Tag>
+                )}
+              </div>
+            </Space>
           </div>
         )}
       </Modal>

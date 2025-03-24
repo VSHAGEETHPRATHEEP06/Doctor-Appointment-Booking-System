@@ -6,9 +6,10 @@ import moment from "moment";
 import "../styles/Appointments.css";
 import "../styles/AdminStyles.css";
 import "../styles/CustomDatePicker.css";
+import "../styles/AppointmentHistory.css";
 
 // Media query handled via CSS instead of React hooks
-import { Table, Tag, Button, Tooltip, Spin, Empty, Modal, Form, message, Space, DatePicker, TimePicker } from "antd";
+import { Table, Tag, Button, Tooltip, Spin, Empty, Modal, Form, message, Space, DatePicker, TimePicker, Collapse, Timeline, Card } from "antd";
 // import DatePicker from "react-datepicker"; // Using Ant Design DatePicker instead
 import "react-datepicker/dist/react-datepicker.css";
 import { 
@@ -22,8 +23,12 @@ import {
   EditOutlined,
   DeleteOutlined,
   ExclamationCircleOutlined,
-  ClockCircleOutlined
+  ClockCircleOutlined,
+  HistoryOutlined,
+  InfoCircleOutlined
 } from "@ant-design/icons";
+
+const { Panel } = Collapse;
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -31,6 +36,7 @@ const Appointments = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [editForm] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -156,7 +162,13 @@ const Appointments = () => {
     setSelectedAppointment(appointment);
     setIsDeleteModalVisible(true);
   };
-  
+
+  // Show appointment history modal
+  const showHistoryModal = (appointment) => {
+    setSelectedAppointment(appointment);
+    setIsHistoryModalVisible(true);
+  };
+
   // Handle appointment update
   const handleUpdateAppointment = async (values) => {
     if (!selectedAppointment) return;
@@ -256,6 +268,7 @@ const Appointments = () => {
     rejected: { bg: "#800000", text: "white" },
     completed: { bg: "#3182ce", text: "white" },
     rescheduled: { bg: "#3498db", text: "white" },
+    "updated-by-doctor": { bg: "#8e44ad", text: "white" },
     reject: { bg: "#800000", text: "white" }, // For consistency with backend naming
   };
 
@@ -307,6 +320,14 @@ const Appointments = () => {
             <ClockCircleOutlined className="cell-icon" />
             <span className="secondary-text" style={{ fontWeight: 500 }}>{record.time ? moment(record.time, "HH:mm").format("hh:mm A") : 'N/A'}</span>
           </div>
+          {record.modifiedBy && (
+            <div className="info-row" style={{ marginTop: '4px' }}>
+              <HistoryOutlined className="cell-icon" style={{ color: '#888' }} />
+              <span className="secondary-text" style={{ fontSize: '12px', color: '#888' }}>
+                Last updated by {record.modifiedBy === 'doctor' ? 'doctor' : 'you'}
+              </span>
+            </div>
+          )}
         </div>
       ),
     },
@@ -320,6 +341,7 @@ const Appointments = () => {
         
         // Determine if we need to show additional info for rescheduled appointments
         const isRescheduled = statusKey === 'rescheduled';
+        const isUpdatedByDoctor = statusKey === 'updated-by-doctor';
         
         return (
           <div className="table-cell-content">
@@ -342,7 +364,9 @@ const Appointments = () => {
                   alignItems: 'center'
                 }}
               >
-                {statusKey === 'reject' ? 'REJECTED' : status.toUpperCase()}
+                {statusKey === 'reject' ? 'REJECTED' : 
+                 statusKey === 'updated-by-doctor' ? 'UPDATED BY DOCTOR' : 
+                 status.toUpperCase()}
               </Tag>
             </div>
             
@@ -350,6 +374,14 @@ const Appointments = () => {
               <div className="info-row" style={{ textAlign: 'center' }}>
                 <span className="secondary-text" style={{ fontSize: '12px', marginTop: '4px' }}>
                   Waiting for doctor approval
+                </span>
+              </div>
+            )}
+            
+            {isUpdatedByDoctor && (
+              <div className="info-row" style={{ textAlign: 'center' }}>
+                <span className="secondary-text" style={{ fontSize: '12px', marginTop: '4px' }}>
+                  Rescheduled by doctor
                 </span>
               </div>
             )}
@@ -363,22 +395,73 @@ const Appointments = () => {
       render: (text, record) => {
         // Allow editing and deleting for all appointments except rejected ones
         const canModify = record.status.toLowerCase() !== 'rejected';
+        const hasHistory = record.modificationHistory && record.modificationHistory.length > 0;
         
         return (
           <div className="table-cell-content">
             <div className="info-row">
-              {canModify ? (
-                <Space size={12}>
-                  <Tooltip title="Modify Appointment" placement="top">
+              <Space size={12}>
+                {canModify && (
+                  <>
+                    <Tooltip title="Modify Appointment" placement="top">
+                      <Button 
+                        icon={<EditOutlined style={{ fontSize: '16px' }} />} 
+                        size="middle"
+                        onClick={() => showEditModal(record)}
+                        className="action-button edit-button"
+                        style={{ 
+                          backgroundColor: '#fff', 
+                          borderColor: '#000', 
+                          color: '#000',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          minWidth: '36px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s ease'
+                        }}
+                      />
+                    </Tooltip>
+                    
+                    <Tooltip title="Cancel Appointment" placement="top">
+                      <Button 
+                        icon={<DeleteOutlined style={{ fontSize: '16px' }} />} 
+                        size="middle"
+                        onClick={() => showDeleteModal(record)}
+                        className="action-button delete-button"
+                        style={{ 
+                          backgroundColor: '#fff', 
+                          borderColor: '#800000', 
+                          color: '#800000',
+                          width: '36px',
+                          height: '36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: 0,
+                          minWidth: '36px',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                          transition: 'all 0.2s ease'
+                        }}
+                      />
+                    </Tooltip>
+                  </>
+                )}
+                
+                {hasHistory && (
+                  <Tooltip title="View Modification History" placement="top">
                     <Button 
-                      icon={<EditOutlined style={{ fontSize: '16px' }} />} 
+                      icon={<HistoryOutlined style={{ fontSize: '16px' }} />} 
                       size="middle"
-                      onClick={() => showEditModal(record)}
-                      className="action-button edit-button"
+                      onClick={() => showHistoryModal(record)}
+                      className="action-button history-button"
                       style={{ 
                         backgroundColor: '#fff', 
-                        borderColor: '#000', 
-                        color: '#000',
+                        borderColor: '#3498db', 
+                        color: '#3498db',
                         width: '36px',
                         height: '36px',
                         display: 'flex',
@@ -391,33 +474,12 @@ const Appointments = () => {
                       }}
                     />
                   </Tooltip>
-                  
-                  <Tooltip title="Cancel Appointment" placement="top">
-                    <Button 
-                      icon={<DeleteOutlined style={{ fontSize: '16px' }} />} 
-                      size="middle"
-                      onClick={() => showDeleteModal(record)}
-                      className="action-button delete-button"
-                      style={{ 
-                        backgroundColor: '#fff', 
-                        borderColor: '#800000', 
-                        color: '#800000',
-                        width: '36px',
-                        height: '36px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 0,
-                        minWidth: '36px',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                        transition: 'all 0.2s ease'
-                      }}
-                    />
-                  </Tooltip>
-                </Space>
-              ) : (
-                <span className="secondary-text">No actions available</span>
-              )}
+                )}
+                
+                {!canModify && !hasHistory && (
+                  <span className="secondary-text">No actions available</span>
+                )}
+              </Space>
             </div>
           </div>
         );
@@ -821,6 +883,109 @@ const Appointments = () => {
               </Button>
             </div>
           </div>
+        </Modal>
+        
+        {/* Add Appointment History Modal */}
+        <Modal
+          title={
+            <div className="admin-popup-title" style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              borderBottom: '2px solid #f0f0f0', 
+              paddingBottom: '12px',
+              marginBottom: '5px' 
+            }}>
+              <HistoryOutlined className="admin-popup-icon" style={{ 
+                fontSize: '22px', 
+                marginRight: '12px', 
+                color: '#1a1a1a',
+                backgroundColor: '#f5f5f5',
+                padding: '8px',
+                borderRadius: '50%',
+              }} />
+              <span style={{ fontSize: '18px', fontWeight: '600' }}>Appointment History</span>
+            </div>
+          }
+          open={isHistoryModalVisible}
+          onCancel={() => setIsHistoryModalVisible(false)}
+          footer={[
+            <Button 
+              key="close" 
+              onClick={() => setIsHistoryModalVisible(false)}
+              style={{ backgroundColor: '#000', color: '#fff', borderColor: '#000' }}
+            >
+              Close
+            </Button>
+          ]}
+          centered
+          maskClosable={true}
+          width={600}
+          destroyOnClose={true}
+          styles={{ body: { padding: '24px', paddingTop: '12px' } }}
+          style={{ borderRadius: '8px', overflow: 'hidden' }}
+        >
+          {selectedAppointment && (
+            <div className="history-container">
+              <Card
+                style={{ marginBottom: '20px' }}
+                title={
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <MedicineBoxOutlined style={{ marginRight: '8px' }} />
+                    <span>Current Appointment Details</span>
+                  </div>
+                }
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div>
+                    <strong>Doctor:</strong> {selectedAppointment?.doctorInfo?.firstName} {selectedAppointment?.doctorInfo?.lastName}
+                  </div>
+                  <div>
+                    <strong>Date:</strong> {moment(selectedAppointment?.date, "DD-MM-YYYY").format("DD MMM YYYY")}
+                  </div>
+                  <div>
+                    <strong>Time:</strong> {moment(selectedAppointment?.time, "HH:mm").format("hh:mm A")}
+                  </div>
+                  <div>
+                    <strong>Status:</strong> {selectedAppointment?.status}
+                  </div>
+                  <div>
+                    <strong>Last Modified By:</strong> {selectedAppointment?.modifiedBy || 'N/A'}
+                  </div>
+                </div>
+              </Card>
+              
+              {selectedAppointment?.modificationHistory && selectedAppointment.modificationHistory.length > 0 ? (
+                <Timeline 
+                  mode="left"
+                  style={{ 
+                    padding: '20px', 
+                    backgroundColor: '#f9f9f9', 
+                    borderRadius: '8px',
+                    maxHeight: '400px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {selectedAppointment.modificationHistory.map((history, index) => (
+                    <Timeline.Item 
+                      key={index}
+                      color={history.modifiedBy === 'doctor' ? 'purple' : 'blue'}
+                      label={history.modifiedDate ? moment(history.modifiedDate).format("DD MMM YYYY, hh:mm A") : 'Unknown date'}
+                    >
+                      <div style={{ fontWeight: '500' }}>
+                        Modified by {history.modifiedBy === 'doctor' ? 'Doctor' : 'You'}
+                      </div>
+                      <div style={{ margin: '8px 0', fontSize: '13px' }}>
+                        <div><strong>From:</strong> {history.previousDate} at {moment(history.previousTime, "HH:mm").format("hh:mm A")} ({history.previousStatus})</div>
+                        <div><strong>To:</strong> {history.newDate} at {moment(history.newTime, "HH:mm").format("hh:mm A")} ({history.newStatus})</div>
+                      </div>
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+              ) : (
+                <Empty description="No modification history available" />
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </Layout>

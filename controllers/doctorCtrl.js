@@ -245,14 +245,32 @@ const updateAppointmentController = async (req, res) => {
       });
     }
     
-    // Store old date/time for notification
-    const oldDate = new Date(appointment.date).toLocaleDateString();
-    const oldTime = appointment.time;
+    // Store old date/time for notification and history
+    const previousDate = appointment.date;
+    const previousTime = appointment.time;
+    const previousStatus = appointment.status;
+    
+    // Create modification history entry
+    const modificationEntry = {
+      modifiedBy: 'doctor',
+      previousDate,
+      previousTime,
+      previousStatus,
+      newDate: date,
+      newTime: time,
+      newStatus: "updated-by-doctor",
+    };
     
     // Update the appointment
     appointment.date = date;
     appointment.time = time;
     appointment.status = "updated-by-doctor";
+    
+    // Update modification tracking fields
+    appointment.modifiedBy = 'doctor';
+    appointment.lastModified = new Date();
+    appointment.modificationHistory.push(modificationEntry);
+    
     await appointment.save();
     
     // Send notification to the user
@@ -260,7 +278,7 @@ const updateAppointmentController = async (req, res) => {
     if (user) {
       user.notification.push({
         type: "appointment-updated",
-        message: `Your appointment on ${oldDate} at ${oldTime} has been rescheduled by Dr. ${doctor.firstName} ${doctor.lastName} to ${new Date(date).toLocaleDateString()} at ${time}`,
+        message: `Your appointment on ${previousDate} at ${previousTime} has been rescheduled by Dr. ${doctor.firstName} ${doctor.lastName} to ${new Date(date).toLocaleDateString()} at ${time}`,
         onClickPath: "/appointments",
       });
       await user.save();
@@ -305,7 +323,7 @@ const deleteAppointmentController = async (req, res) => {
     }
     
     // Store appointment info for notification
-    const appointmentDate = new Date(appointment.date).toLocaleDateString();
+    const appointmentDate = appointment.date;
     const appointmentTime = appointment.time;
     
     // Send notification to the user before deleting
@@ -315,6 +333,13 @@ const deleteAppointmentController = async (req, res) => {
         type: "appointment-cancelled",
         message: `Your appointment on ${appointmentDate} at ${appointmentTime} with Dr. ${doctor.firstName} ${doctor.lastName} has been cancelled by the doctor.`,
         onClickPath: "/appointments",
+        data: {
+          appointmentId: appointment._id,
+          doctorName: `${doctor.firstName} ${doctor.lastName}`,
+          date: appointmentDate,
+          time: appointmentTime,
+          status: "cancelled-by-doctor"
+        }
       });
       await user.save();
     }

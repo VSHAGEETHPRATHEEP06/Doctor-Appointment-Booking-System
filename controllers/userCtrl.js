@@ -303,7 +303,8 @@ const bookAppointmentController = async (req, res) => {
     const existingAppointment = await appointmentModel.findOne({
       doctorId,
       date: formattedDate,
-      time
+      time: time || { $exists: false },
+      status: { $ne: "rejected" }
     });
 
     if (existingAppointment) {
@@ -625,12 +626,25 @@ const updateAppointmentController = async (req, res) => {
     const formattedDate = date; // Keep as DD-MM-YYYY
     const formattedTime = time; // Keep as HH:mm
     
+    // Store previous values for history
+    const previousDate = appointment.date;
+    const previousTime = appointment.time;
+    const previousStatus = appointment.status;
+
+    // Create modification history entry
+    const modificationEntry = {
+      modifiedBy: 'user',
+      previousDate,
+      previousTime,
+      previousStatus,
+      newDate: formattedDate,
+      newTime: formattedTime,
+      newStatus: previousStatus.toLowerCase() === 'approved' ? 'rescheduled' : 'pending',
+    };
+    
     // Update the appointment
     appointment.date = formattedDate;
     appointment.time = formattedTime;
-    
-    // Store the previous status
-    const previousStatus = appointment.status;
     
     // If the appointment was already approved, set to 'rescheduled' status
     // otherwise reset to pending
@@ -639,6 +653,11 @@ const updateAppointmentController = async (req, res) => {
     } else {
       appointment.status = "pending";
     }
+    
+    // Update modification tracking fields
+    appointment.modifiedBy = 'user';
+    appointment.lastModified = new Date();
+    appointment.modificationHistory.push(modificationEntry);
     
     await appointment.save();
     

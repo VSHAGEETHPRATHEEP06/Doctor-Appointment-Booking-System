@@ -1,0 +1,156 @@
+/* Appointment History Modal Styles */
+.history-container {
+    margin-top: 10px;
+  }
+  
+  .history-card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .timeline-container {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .timeline-item {
+    padding: 12px;
+    background-color: #fff;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .timeline-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  
+  .timeline-item-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+  
+  .timeline-item-date {
+    font-size: 12px;
+    color: #666;
+  }
+  
+  .timeline-item-content {
+    margin: 8px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  
+  .timeline-doctor-modified {
+    border-left: 3px solid #8e44ad;
+  }
+  
+  .timeline-user-modified {
+    border-left: 3px solid #3498db;
+  }
+  
+  /* Responsive styles */
+  @media (max-width: 768px) {
+    .timeline-container {
+      padding: 15px;
+    }
+    
+    .timeline-item {
+      padding: 10px;
+    }
+    
+    .timeline-item-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .timeline-item-date {
+      margin-top: 4px;
+    }
+  }
+  
+  /* Animation for timeline items */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .timeline-item {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  /* Status badges for history items */
+  .history-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-left: 8px;
+  }
+  
+  .history-status-pending {
+    background-color: #f59e0b;
+    color: white;
+  }
+  
+  .history-status-approved {
+    background-color: #000000;
+    color: white;
+  }
+  
+  .history-status-rejected {
+    background-color: #800000;
+    color: white;
+  }
+  
+  .history-status-completed {
+    background-color: #3182ce;
+    color: white;
+  }
+  
+  .history-status-rescheduled {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .history-status-updated {
+    background-color: #8e44ad;
+    color: white;
+  }
+  
+  /* Custom scrollbar for timeline container */
+  .timeline-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .timeline-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  .timeline-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  
+  .timeline-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }

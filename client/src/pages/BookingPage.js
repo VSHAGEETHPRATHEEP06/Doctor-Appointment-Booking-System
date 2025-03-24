@@ -267,7 +267,7 @@ const BookingPage = () => {
           },
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${getToken()}`,
               'Content-Type': 'application/json'
             },
           }
