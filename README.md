@@ -111,10 +111,6 @@ A comprehensive healthcare appointment management solution built using the MERN 
    - Frontend: [http://localhost:3000](http://localhost:3000)
    - Backend API: [http://localhost:8000](http://localhost:8000)
 
-## 🔐 Default Admin Credentials
-- Email: admin@example.com
-- Password: password123
-
 ## 📱 Application Usage
 
 1. **Patient Flow**
