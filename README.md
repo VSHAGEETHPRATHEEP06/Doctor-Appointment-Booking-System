@@ -137,10 +137,6 @@ A comprehensive healthcare appointment management solution built using the MERN 
    - Manage all users in the system
    - Generate system reports
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🙏 Acknowledgements
 
 - [Ant Design](https://ant.design/) for the UI components
